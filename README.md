@@ -30,16 +30,20 @@ Create the python environment and change to it
 
 ## Preprocessing 
 
-First download the FitRec dataset `endomondoHR_proper.json` from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home) and move it the `data` directory
-
-`mv example.gpx data/gpx/.`
-
-Process the `gpx` file to geojson
-
+First download the FitRec dataset `endomondoHR_proper.json` from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home) and move it the `data` directory.
+Process the data with the following command, where the the command line arguments are the input and output data file
 
 ```
-python process_all_gpx_to_master.py --dir_gpx=data/gpx --dir_geojson=data/geojson
+python data_preprocess.py data/data_subset_proper.json processed_data.csv
 ```
+
+At this point the data is ordered by timestamp and you can verify with the following command from the cli 
+```
+head -n 20 processed_data.csv
+```
+
+
+
 
 Plot the resulting data in a web browser 
 

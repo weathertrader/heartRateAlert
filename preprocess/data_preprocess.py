@@ -1,7 +1,7 @@
 # data_preprocess.py 
 # reads in raw gps data and write a csv ordered by timestamp 
 # usage: 
-# python data_subset_proper.json processed_data.csv
+# python data_preprocess.py data_subset_proper.json processed_data.csv
 
 import os
 #import ast
@@ -38,8 +38,8 @@ def preprocess_inputs(input_file, output_file):
     # os.chdir(dir_work)
     dir_work = os.getcwd()
     print('working directory is %s ' %(os.getcwd()))
-    dir_data = os.path.join(dir_work, 'data')
-    print(os.path.isdir(dir_data))
+    #dir_data = os.path.join(dir_work, 'data')
+    #print(os.path.isdir(dir_data))
 
     #file_name_data = os.path.join(dir_data, 'data_subset_proper.json')
     #os.path.isfile(file_name_data)
