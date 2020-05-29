@@ -20,13 +20,17 @@ Clone the repo and enter the dictory.
 
 Create the python environment and change to it
 
+`git clone git@github.com:weathertrader/heartRateAlert.git`
+
+`cd heartRateAlert`
+
 `conda env create -f environment.yml`
 
 `conda activate env_gis`
 
 ## Preprocessing 
 
-First download the FitRec data from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home)
+First download the FitRec dataset `endomondoHR_proper.json` from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home) and move it the `data` directory
 
 `mv example.gpx data/gpx/.`
 
