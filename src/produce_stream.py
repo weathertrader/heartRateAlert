@@ -1,7 +1,151 @@
 # data_preprocess.py 
 # reads in raw gps data and write a csv ordered by timestamp 
 # usage: 
-# python src/data_preprocess.py data/gps_tracks_0.txt data/gps_tracks_processed_0.csv
+# python preprocess/data_preprocess.py data/endomondoHR_proper.json processed_data.csv
+# python preprocess/data_preprocess.py data/gps_tracks_0.txt gps_tracks_processed_0.csv
+# split -l 20000 endomondoHR_proper.json
+# mv xaa gps_data_0.csv 
+
+
+import os
+import psutil
+import multiprocessing
+from multiprocessing import Process
+from multiprocessing import Pool
+import time
+import csv
+import ast
+
+dir_work = '/home/craigmatthewsmith/heartRateAlert'
+os.chdir(dir_work)
+dir_work = os.getcwd()
+print('working directory is %s ' %(os.getcwd()))
+#dir_data = os.path.join(dir_work, 'data')
+#print(os.path.isdir(dir_data))
+
+input_file = 'data/gps_tracks_processed_0.csv'
+os.path.isfile(input_file)
+
+
+delay_amount = 0.0001
+
+input_file_open = open(input_file,'r')
+print('input file open')
+file_lines = input_file_open.readlines()
+n_lines = len(file_lines)
+print('found %s lines' %(n_lines))
+
+
+time_start = time.time()
+print ('read data ')
+n = 6 
+for n in range(1, n_lines, 1): 
+    #next(csv_read_file)
+    #line = file_lines[n]
+    #[entry, dt_temp, id_temp, lon_temp, lat_temp] = line.rstrip().split(',')
+    #[entry, dt_temp, id_temp, lon_temp, lat_temp] = map(float, line.rstrip().split(','))
+    [entry, dt_temp, id_temp, lon_temp, lat_temp] = map(float, file_lines[n].rstrip().split(','))
+    print(' streaming n %8.0f of %8.0f, dt %6.0f, id %6.0f' %(n, n_lines, dt_temp, id_temp))
+    time.sleep(delay_amount)
+
+input_file_open.close()
+
+time_end = time.time()
+process_dt = (time_end - time_start)/60.0
+print ('read    data took %5.2f minutes ' %(process_dt))
+
+
+
+ast.literal_eval(line.rstrip().split(','))
+
+
+
+
+ lon_temp = np.array(ast.literal_eval(line_strip.split('longitude')[1].split('altitude')[0].replace('],',']').replace("' ",'').replace("] '",']')))
+           
+
+
+eplace('\n,','')
+
+
+line.replace('\n,','')
+.split('altitude')[0]
+    
+    
+    dt_offset_temp = int(dt_offset_scaling*random.random())
+    lon_offset_temp = lon_offset_scaling*(random.random()-1.0)
+    lat_offset_temp = lat_offs
+
+# read data into empty arrays
+yy_recvd_list = []
+product_list  = []
+company_list  = []
+with open(input_file, "r", encoding="utf-8") as csv_read_file: # force utf-8 encoding 
+    next(csv_read_file)
+    for row in csv.reader(csv_read_file):
+        # here check number of entries per row
+        n_fields = len(row)
+        #print ('%s n_fields found' %(n_fields))
+        if not (n_fields == n_fields_expected):
+            print ('ERROR - incorrect number of fields in row %s ' %(row))
+        else: 
+            dt_temp_str =  row[0]
+            product_temp = row[1]
+            company_temp = row[7]
+            if (str.isspace(product_temp) or str.isspace(company_temp) or not(product_temp) or not(company_temp)):
+                print ('ERROR with product or company fields, "%s", "%s" ' %(product_temp, company_temp))
+                next(csv_read_file)
+            else: # continue reading this row 
+                try: # if any single one fails, no fields should be appended at all 
+                    #yy_recvd_list.append(dt.datetime.strptime(dt_temp_str, '%Y-%m-%d').year)
+                    yy_recvd_list.append(dt.datetime.strptime(dt_temp_str, '%Y-%m-%d').year)
+                    product_list.append(product_temp.lower())
+                    company_list.append(company_temp.lower())
+                except: # ValueError: 
+                    print ('ERROR skipping row  due to malformed datetime string %s ' %(dt_temp_str))
+time_end = time.time()
+process_dt = (time_end - time_start)/60.0
+print ('read    data took %5.2f minutes ' %(process_dt))
+
+
+multiprocessing.cpu_count()
+psutil.cpu_count()
+
+psutil.cpu_count(logical=False)
+psutil.cpu_count(logical=True)
+
+os.cpu_count()
+
+
+
+subprocess.Popen(compile_cmd, shell=True)
+
+
+def f(x):
+    return x*x
+
+if __name__ == '__main__':
+    with Pool(5) as p:
+        print(p.map(f, [1, 2, 3]))
+
+def info(title):
+    print(title)
+    print('module name:', __name__)
+    print('parent process:', os.getppid())
+    print('process id:', os.getpid())
+
+def f(name):
+    info('function f')
+    print('hello', name)
+
+if __name__ == '__main__':
+    info('main line')
+    p = Process(target=f, args=('bob',))
+    p.start()
+    p.join()
+
+
+
 
 import os
 import ast
@@ -196,9 +340,9 @@ def preprocess_inputs(input_file, output_file):
     del data_all
     #data_df.sort_values(by=['dt', 'user'])
     #data_df = data_df.sort_values(by=['dt', 'user'])
-    print('sort df start ')
+    print('    sort df start ')
     data_df = data_df.sort_values(by=['dt'])
-    print('sort df end ')
+    print('    sort df end ')
     #processed_data_file_name = os.path.join(dir_work,'processed_data.csv')
     #processed_data_file_name = os.path.join(dir_work,'processed_data_subset_'+str(subset)+'.csv')
     #print('    processed_data_file_name is %s ' %(processed_data_file_name))
@@ -317,4 +461,3 @@ if __name__ == '__main__':
 #         lat_all.append(data_temp[ 'latitude'][n] - data_temp[ 'latitude'][0] + lat_offset_temp)
 #         #lat_all.append(list(np.array(data_temp['latitude'][0:n_records)) - data_temp['latitude'][0] + lat_offset_temp))
 #         dt_all.append( data_temp['timestamp'][n] - data_temp['timestamp'][0] +  dt_offset_temp)
-    
