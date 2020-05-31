@@ -16,17 +16,19 @@ Inline-style:
 
 ## Installation
 
-Clone the repo and enter the dictory.  
+Clone the repo and enter the directory.  
+
+```git clone git@github.com:weathertrader/heartRateAlert.git
+
+cd heartRateAlert
+```
 
 Create the python environment and change to it
 
-`git clone git@github.com:weathertrader/heartRateAlert.git`
+```conda env create -f environment.yml
 
-`cd heartRateAlert`
-
-`conda env create -f environment.yml`
-
-`conda activate env_gis`
+conda activate env_gis
+```
 
 ## Preprocessing 
 
@@ -34,12 +36,12 @@ First download the FitRec dataset `endomondoHR_proper.json` from [this website](
 Process the data with the following command, where the the command line arguments are the input and output data file
 
 ```
-python data_preprocess.py data/data_subset_proper.json processed_data.csv
+python preprocess/data_preprocess.py data/data_subset_proper.json processed_data.csv
 ```
 
 At this point the data is ordered by timestamp and you can verify with the following command from the cli 
 ```
-head -n 20 processed_data.csv
+head -n 30 processed_data.csv
 ```
 
 
