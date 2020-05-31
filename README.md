@@ -9,6 +9,7 @@ Inline-style:
 ## Table of Contents
 1. [Installation](README.md#installation)
 1. [Preprocessing](README.md#preprocessing)
+1. [Streaming](README.md#streaming)
 1. [Run Instructions](README.md#Run-instructions)
 1. [Scripts](README.md#Scripts)
 1. [To do](README.md#To-do)
@@ -32,6 +33,7 @@ conda activate env_gis
 
 ## Preprocessing 
 
+Note csmith - need to redo this part using `split`
 First download the FitRec dataset `endomondoHR_proper.json` from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home) and move it the `data` directory.
 Process the data with the following command, where the the command line arguments are the input and output data file
 
@@ -44,13 +46,33 @@ At this point the data is ordered by timestamp and you can verify with the follo
 head -n 30 processed_data.csv
 ```
 
-
-
-
-Plot the resulting data in a web browser 
+Now upload these files to S3 using the following command from the cli
 
 ```
-python plot_master_geojson.py --dir_geojson=data/geojson
+aws sync command 
+```
+
+## Streaming
+
+The data streamer is configured to run on multiple cores simultaneously and the data throughput can be tuned
+according to number of cores simultaneously, a delay in starting up each individual core, and a delay on a per-line basis in reading and streaming data
+The three command line arguments in order are `n_cores`, `core_delay`, and `line_delay`
+From the EC2 cli run one of the following .
+
+```
+python src/produce_stream.py 1 1 0.0
+
+python src/produce_stream.py 8 10 0.001
+```
+
+
+```
+python preprocess/data_preprocess.py data/data_subset_proper.json processed_data.csv
+```
+
+At this point the data is ordered by timestamp and you can verify with the following command from the cli 
+```
+head -n 30 processed_data.csv
 ```
 
 
