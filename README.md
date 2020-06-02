@@ -33,17 +33,37 @@ conda activate env_gis
 
 ## Preprocessing 
 
-Note csmith - need to redo this part using `split`
 First download the FitRec dataset `endomondoHR_proper.json` from [this website](https://sites.google.com/eng.ucsd.edu/fitrec-project/home) and move it the `data` directory.
-Process the data with the following command, where the the command line arguments are the input and output data file
+Since the data file is too big to process all at once, we first need to split it up
+according the number of cores we wish to stream.  You will need to `cd` into the `data` directory
+and `split` the original text file into smaller partitions.
 
 ```
-python preprocess/data_preprocess.py data/data_subset_proper.json processed_data.csv
+cd data
+split -l 20000 endomondoHR_proper.json
+mv xaa gps_tracks_0.txt 
+mv xab gps_tracks_1.txt 
+mv xac gps_tracks_2.txt 
+mv xad gps_tracks_3.txt 
+mv xae gps_tracks_4.txt 
+mv xaf gps_tracks_5.txt 
+mv xag gps_tracks_6.txt 
+mv xah gps_tracks_7.txt 
+mv xai gps_tracks_8.txt 
+```
+Process the data by exectuting the following `bash` script, which in turn will 
+call a python script over all of the input files with command line arguments as the input and output data file
+
+```
+./src/preprocess.bsh
+
+python src/data_preprocess.py data/gps_tracks_0.txt data/gps_tracks_processed_0.csv
+etc ...
 ```
 
 At this point the data is ordered by timestamp and you can verify with the following command from the cli 
 ```
-head -n 30 processed_data.csv
+head -n 30 gps_tracks_processed_0.csv
 ```
 
 Now upload these files to S3 using the following command from the cli
@@ -56,25 +76,14 @@ aws sync command
 
 The data streamer is configured to run on multiple cores simultaneously and the data throughput can be tuned
 according to number of cores simultaneously, a delay in starting up each individual core, and a delay on a per-line basis in reading and streaming data
-The three command line arguments in order are `n_cores`, `core_delay`, and `line_delay`
-From the EC2 cli run one of the following .
+These three command line arguments in order are `n_cores`, `core_delay`, and `line_delay`
+From the EC2 cli run one of the following: 
 
 ```
 python src/produce_stream.py 1 1 0.0
 
 python src/produce_stream.py 8 10 0.001
 ```
-
-
-```
-python preprocess/data_preprocess.py data/data_subset_proper.json processed_data.csv
-```
-
-At this point the data is ordered by timestamp and you can verify with the following command from the cli 
-```
-head -n 30 processed_data.csv
-```
-
 
 ## Run Instructions
 

@@ -3,8 +3,6 @@
 # usage: 
 # python preprocess/data_preprocess.py data/endomondoHR_proper.json processed_data.csv
 # python preprocess/data_preprocess.py data/gps_tracks_0.txt gps_tracks_processed_0.csv
-# split -l 20000 endomondoHR_proper.json
-# mv xaa gps_data_0.csv 
 
 import os
 import ast
@@ -17,8 +15,6 @@ import numpy as np
 import sys
 #import csv
 import time
-
-
 
 # debugging 
 #input_file = 'data/endomondoHR_proper.json'
