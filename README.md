@@ -16,8 +16,6 @@ Inline-style:
 1. [To do](README.md#To-do)
 1. [References](README.md#References)
 
-
-
 ## Kafka Setup
 
 In the EC2 dashboard on AWS, spin up four t2.medium instances, rename three to slave and one to master.
@@ -90,6 +88,105 @@ bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --f
 This is a message
 This is another message
 ```
+
+###############################################################################
+###############################################################################
+Start a multi-core cluster across multiple nodes 
+scp the server*.properties to their appropriate nodess
+
+# master
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server.properties ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
+# slave 1
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-1.properties ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
+# slave 2
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-2.properties ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
+# slave 3 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-3.properties ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
+
+Now start the zookeeper server on master 
+
+```
+bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+Start the kafka servers on master and on slaves 
+```
+# on master 
+bin/kafka-server-start.sh config/server.properties
+# on slaves 
+bin/kafka-server-start.sh config/server-1.properties
+bin/kafka-server-start.sh config/server-2.properties
+bin/kafka-server-start.sh config/server-3.properties
+```
+
+```
+# create topic from master 
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test_from_master
+# create topic from slave1
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test_from_slave1
+```
+
+On master and slaves list the topics to make sure they have been generated correctly 
+```
+# on master
+bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+# on slaves 
+bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+```
+
+# works 
+#   create topic on master and consume on master
+#   create topic on slave  and consume on master
+#   create topic on slave  and consume on other slave 
+
+# to check 
+#   produce on master and consume on master
+#   produce on master and consume on slave
+#   produce on slave  and consume on master
+#   produce on slave  and produce on master
+
+Now try producing from master or from slave 
+
+```
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic test_from_master
+message from master on test_from_master 
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic test_from_slave
+message from master on test_from_master 
+```
+
+And consume from master or from slave
+
+```
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic test_from_master
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic test_from_slave
+```
+
+
+To see which broker is doing what run the describe topics command 
+
+```
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic test
+```
+
+now publish a few messages to our new topic 
+```
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic my-replicated-topic
+my test message 1
+my test message 2
+```
+
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+
+
+
 To start a multi-core cluster 
 ```
 cp config/server.properties config/server-1.properties 
