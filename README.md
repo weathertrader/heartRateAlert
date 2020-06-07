@@ -1,4 +1,17 @@
 
+
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# slave 1
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# slave 2
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# slave 3 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+
+
+
+
+
 # RaceCast 
 
 Create a live leaderboard from gps streaming 
@@ -15,6 +28,257 @@ Inline-style:
 1. [Scripts](README.md#Scripts)
 1. [To do](README.md#To-do)
 1. [References](README.md#References)
+
+## S3 storage setup
+
+bucket name is 
+gps-data-processed
+
+## Apache Setup on local
+
+sudo apt-get update && sudo apt upgrade
+sudo apt-get install openjdk-8-jre-headless
+# note here I had to install 11 since 8 did not work 
+sudo apt-get install scala
+v 2.11.12
+scala -version
+wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
+
+tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
+sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
+
+
+/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+
+vi /usr/local/spark/conf/spark-env.sh
+export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+ec2 only
+export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+
+vi ~/.bashrc
+export PATH=/home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/bin:$PATH
+export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+ec2 only 
+export PATH=/usr/local/spark/bin:$PATH
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+
+#vi ~/.profile
+#export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+#export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+#and source 
+
+
+
+# create conda environment 
+conda create -n pyspark_env
+conda activate pyspark_env
+conda install -c conda-forge pyspark
+conda install -c conda-forge spyder‑kernels
+
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-master.sh 
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-slave.sh spark://localhost:7077
+
+
+
+./spark-2.4.5-bin-hadoop2.7/sbin/start-all.sh
+./spark-2.4.5-bin-hadoop2.7/sbin/stop-all.sh
+
+
+sh /usr/local/spark/sbin/start-all.sh
+sh /usr/local/spark/sbin/stop-all.sh 
+
+
+
+## Apache Setup on EC2
+
+ssh into each instance 
+```
+sudo apt-get update && sudo apt upgrade
+sudo apt-get install openjdk-8-jre-headless
+sudo apt-get install scala
+
+```
+and check the scala version, expecting 2.11.12
+```
+scala -version
+```
+on the master install ssh server 
+```
+# not needed, aleady installed 
+sudo apt install openssh-server openssh-client
+```
+download spark 
+```
+wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
+```
+
+extract the zipped file to /usr/local/spark and add the spark/bin into PATH variable.
+
+```
+tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
+sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
+vi ~/.profile
+export PATH=/usr/local/spark/bin:$PATH
+source ~/.profile
+```
+
+edit the following file 
+
+```
+vi /usr/local/spark/conf/spark-env.sh
+
+# contents of conf/spark-env.sh
+export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# For PySpark use
+export PYSPARK_PYTHON=python3
+```
+
+and 
+
+```
+vi /usr/local/spark/conf/slaves
+
+ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+```
+
+now start and stop the cluster with 
+
+```
+sh /usr/local/spark/sbin/start-all.sh
+sh /usr/local/spark/sbin/stop-all.sh 
+
+```
+
+
+install miniconda
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod 775 that file and execute it then
+
+source ~/.bashrc
+
+conda update conda
+conda config --add channels conda-forge
+conda install -c conda-forge pyspark
+```
+
+run the examples 
+
+```
+python simpleapp.py
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com simpleapp.py:7077
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com simpleapp.py
+
+spark-submit --master local[4] simpleapp.py
+
+```
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 /usr/local/spark/examples/src/main/python/pi.py 1000
+
+
+export PYSPARK_PYTHON=/usr/bin/python3
+
+
+
+SPARK_MASTER=spark://10.0.0.5:7077
+SPAKR_SUBMIT=/usr/local/spark/bin/spark-submit
+PY_SPARK=$PROJECT_DIR/clean_airbnb.py
+
+
+
+
+
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 stream_gps.py
+
+
+python process_gps.py
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 process_gps.py 
+
+
+
+
+
+vi /usr/local/spark/conf/spark-env.sh
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+
+vi ~/.profile
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+vi ~/.bashrc
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+
+
+
+
+```
+
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
+python wordcount.py segment.paths.gz
+
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
+
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
+
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
+
+
+
+
+does not work
+spark-submit --executor-memory 16g --executor-cores 4 --driver-memory 8g --driver-cores 2 --deploy-mode client --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
+spark-submit --executor-memory 4g --executor-cores 2 --driver-memory 4g --driver-cores 2 --deploy-mode client --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
+
+```
+
+
+# wordcount w local data
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
+# wordcount w s3data commoncrawl
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
+# wordcount w s3data mine 
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
+
+
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
+
+
+
+sudo apt-get install python-pip
+
+pip install pyspark
+
+
+now try running the word count script 
+```
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
+```
+
+
+http://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:8080
+
+
+
+
 
 ## Kafka Setup
 
@@ -42,8 +306,6 @@ and install java8 with
 ```
 sudo apt-get install openjdk-8-jre-headless
 # sudo apt-get install openjdk-8-jdk
-# sudo add-apt-repository ppa:linuxuprising/java 
-# sudo apt install openjdk-11-jre-headless
 ```
 and recheck the output of `java -version` from the cli.
 Now install Kafka  by downloading the zipped file to master, or download to local and scp it to master
@@ -88,6 +350,22 @@ bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --f
 This is a message
 This is another message
 ```
+
+
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/streaming.py ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+
+
+
+
+# master
+ssh ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+
+ssh ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+
+ssh ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+ssh ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+
+
 
 ###############################################################################
 ###############################################################################
@@ -151,7 +429,7 @@ Now try producing from master or from slave
 bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic test_from_master
 message from master on test_from_master 
 bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic test_from_slave
-message from master on test_from_master 
+message from master on test_from_slave 
 ```
 
 And consume from master or from slave
@@ -161,12 +439,11 @@ bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning
 bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic test_from_slave
 ```
 
-
 To see which broker is doing what run the describe topics command 
 
 ```
-bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
-bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic test
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic test_from_master
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic test_from_slave1
 ```
 
 now publish a few messages to our new topic 
@@ -242,7 +519,7 @@ kill -9 7564
 ```
 
 
-Leadership has switched to one of the followers and node 1 is no longer in the in-sync replica set:
+master has switched to one of the followers and node 1 is no longer in the in-sync replica set:
 
 and get the description of the new topic again 
 ```
