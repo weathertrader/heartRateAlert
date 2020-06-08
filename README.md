@@ -1,14 +1,398 @@
 
 
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+sudo apt-get install s3fs
+
+python src/batch_process_gps.py
+spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py
+
+
+
+
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-master.sh 
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-slave.sh spark://localhost:7077
+
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-master.sh 
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-slave.sh 
+
+
+./spark-2.4.5-bin-hadoop2.7/sbin/start-all.sh
+./spark-2.4.5-bin-hadoop2.7/sbin/stop-all.sh
+
+
+sh /usr/local/spark/sbin/start-all.sh
+sh /usr/local/spark/sbin/stop-all.sh 
+
+
+
+# pg instance 
+ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+# master - done
+ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+# slave 1 - done
+ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+# slave 2 - done
+ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+# slave 3 - done
+ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+
+mkdir -p heartRateAlert/data heartRateAlert/src
+# master - done
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+# slave 1 - done
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+# slave 2 - done
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+# slave 3 - done
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+# pg 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+
+# master - done
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+# slave 1 - done
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+# slave 2 - done
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+# slave 3 - done
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+# pg
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_batch_*.csv ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+
+# master - done
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 # slave 1
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 # slave 2
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 # slave 3 
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/data_temp.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 
 
+###############################################################################
+###############################################################################
+
+# pg instance 
+ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+# master to pg done 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# pg to master done 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+# install pg on pg server 
+ssh ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+sudo apt-get update && sudo apt upgrade
+sudo apt install postgresql postgresql-contrib
+
+sudo su postgres
+psql
+# to quit
+\q 
+createuser --interactive
+ubuntu 
+# createdb racecast
+
+# login to postgres (as user postgres)
+psql 
+# quit postgres
+\q
+# display tables 
+\d
+\dt 
+# list databases
+\l 
+
+# List current roles and attributes 
+\du
+\di 
+# Show grant table 
+\z
+
+
+
+# delete database
+DROP DATABASE racecast;
+
+# create postgresql database and tables 
+sudo su – postgres
+psql
+CREATE DATABASE racecast WITH OWNER ubuntu;
+\q
+
+# login to psql sundowner database
+psql -d racecast 
+
+
+
+
+# create tables 
+psql example.sql
+
+
+user
+dt_first
+dt_last
+sum_lon_diff
+sum_lat_diff
+lon_first
+lon_last
+lat_first
+lat_last
+
+
+CREATE TABLE leaderboard (
+    userid     INT PRIMARY KEY,
+    dt         FLOAT  NOT NULL,
+    lon_last   FLOAT  NOT NULL, 
+    lat_last   FLOAT  NOT NULL, 
+    total_dist FLOAT  NOT NULL
+);
+
+
+# change data_directory to match above in  
+cd /etc/postgresql/10/main
+sudo cp postgresql.conf postgresql.conf_old
+sudo vi /etc/postgresql/10/main/postgresql.conf
+uncomment listen_addresses=’*’
+uncomment or set listen_addresses=’*’
+
+sudo service postgresql restart
+sudo service postgresql status
+
+# note done yet 
+sudo cp pg_hba.conf pg_hba.conf_old
+add IP to the pg_hba.conf
+
+134.197.190.184 – DRI IP address old 
+192.168.144.150 – DRI IP address new 
+192.168.144.150 
+
+192.168.79.158
+Add IP to pg_hba.conf
+
+
+psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE TABLE leaderboard (
+  user       INTEGER PRIMARY KEY,
+  dt         FLOAT,
+  lon_last   FLOAT, 
+  lat_last   FLOAT, 
+  total_dist FLOAT);
+
+
+CREATE TABLE leaderboard (
+    user INT PRIMARY KEY,
+    dt         FLOAT,
+    lon_last   FLOAT, 
+    lat_last   FLOAT, 
+    total_dist FLOAT, 
+    type varchar (50) NOT NULL,
+    color varchar (25) NOT NULL,
+    location varchar(25) check (location in ('north', 'south', 'west', 'east', 'northeast', 'southeast', 'southwest', 'northwest')),
+    install_date date
+);
+
+
+
+CREATE TABLE batch_diff (
+  user       INT4,
+  lon_last   FLOAT, 
+  lat_last   FLOAT, 
+PRIMARY KEY (user);
+
+CREATE TABLE batch_segment (
+  user           INT4,
+  sum_lon_diff   FLOAT, 
+  sum_lat_diff   FLOAT, 
+PRIMARY KEY (user);
+
+
+# drop tables 
+DROP TABLE leaderboard;
+DROP TABLE batch_diff;
+DROP TABLE batch_segment;
+# drop all entries in a table 
+DELETE from leaderboard;
+
+
+
+CREATE TABLE rolling (
+  user           INT4,
+  dt_first       FLOAT,
+  dt_last        FLOAT,
+  sum_lon_diff   FLOAT, 
+  sum_lat_diff   FLOAT, 
+  lon_first      FLOAT, 
+  lon_last       FLOAT, 
+  lat_first      FLOAT, 
+  lat_last       FLOAT, 
+PRIMARY KEY (user)
+);
+
+
+
+
+
+
+
+
+## sudo adduser importer
+## HkMGWCekuxc3qDWE
+## sudo adduser webapp
+## t324MymgzUNUpVFY
+## sudo su - postgres
+psql
+CREATE USER importer WITH PASSWORD 'HkMGWCekuxc3qDWE';
+CREATE USER webapp WITH PASSWORD 't324MymgzUNUpVFY';
+\q
+psql -d betterweather
+sudo service postgresql restart
+
+GRANT ALL ON ALL TABLES in SCHEMA public TO importer;
+GRANT SELECT ON ALL TABLES in SCHEMA public TO webapp;
+
+
+
+GRANT SELECT ON stn TO webapp;
+GRANT SELECT ON wrf TO webapp;
+GRANT SELECT ON obs TO webapp;
+Three options here, not sure if 1st works or 2nd works or both or neither, previous effort used last 3 commands 
+#GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO importer; 
+#GRANT ALL ON stn TO importer;
+#GRANT ALL ON wrf TO importer;
+#GRANT ALL ON obs TO importer;
+
+general postgresql commands 
+space check df –h /var
+
+# launch pg ec2 instance on ec2 
+# open all inbound 5432 traffic
+
+
+#  datetime_valid   TIMESTAMP WITH TIME ZONE,
+#  stn_id           VARCHAR(10) REFERENCES stn (id) ON UPDATE CASCADE,
+# hgt              FLOAT,
+# domain           INT4,
+# ensemble_member  VARCHAR(96),
+ 
+ 
+CREATE TABLE stn (
+  id       VARCHAR(10) PRIMARY KEY,
+  name     TEXT NOT NULL,
+  obs_hgt  FLOAT NOT NULL DEFAULT 10.0,
+  mnet_id  INT4,
+  lon      DOUBLE PRECISION,
+  lat      DOUBLE PRECISION,
+  elev     FLOAT,
+  notes    TEXT
+);
+
+
+
+Show contents of table 
+SELECT * FROM stn;
+sample insert command 
+INSERT INTO stn(id, name, obs_hgt, mnet_id, lon, lat, elev, notes) VALUES('KSBA', 'Santa_Barbara_airport', '10.0', '2', '-118.0', '45.0', '100.0', 'note1');
+check table contents 
+SELECT * FROM stn;
+  
+Remote connect to db from laptop 
+Testing 
+psql -U webapp -d makani -h archer.dri.edu
+psql -U webapp -d makani -h 138.68.2.68
+
+firewalls 
+on db server as su 
+sudo ufw allow 5432
+sudo ufw allow from 192.168.0.0/24 to any port 5432
+sudo ufw show added
+sudo ufw enable
+sudo ufw allow from 192.168.144.128/24 to any port 5432
+sudo ufw allow from 192.168.144.128 to any port 5432
+
+sudo ufw allow from 134.197.190.184/24 to any port 5432
+134.197.190.184
+sudo ufw allow from 192.168.144.150/24 to any port 5432
+
+
+
+
+
+
+
+
+DELETE FROM data_hrrr;
+DELETE FROM forecasts_downloaded_hrrr
+DELETE FROM forecasts_processed_hrrr
+
+
+
+
+Move location of postgres DB from /var/lib to mounted block volume 
+# Check current mount point 
+sudo -u postgres psql
+SHOW data_directory;
+\q
+# Stop the db 
+sudo service postgresql stop
+sudo service postgresql status
+# move the data over 
+sudo rsync -av /var/lib/postgresql /mnt/weathertrader-block-storage
+# move the old location to backup
+sudo mv /var/lib/postgresql/9.5/main /var/lib/postgresql/9.5/main.bak
+sudo chown postgres.postgres /mnt/weathertrader-block-storage/postgresql
+# note csmith 03/28/2018 havent done this yet, should free up 10 Gb on the DB server 
+sudo rm -rf /var/lib/postgresql/9.5/main.bak
+
+
+
+
+Postgres stuff 
+install postgresql 
+sudo apt-get install postgresql postgresql-contrib
+check user that postgres runs under
+ps aux | grep postgres
+user name is postgres
+login as user postgres
+sudo su - postgres
+
+
+Remove postgres
+sudo apt-get -purge remove postgresql
+sudo apt-get -purge remove postgresql-contrib
+
+
+
+Delete postgres users
+DROP USER webapp;
+
+Stop postgres
+sudo service postgresql stop
+
+delete users
+sudo userdel importer
+
+
+###############################################################################
+###############################################################################
 
 
 
@@ -82,17 +466,6 @@ conda activate pyspark_env
 conda install -c conda-forge pyspark
 conda install -c conda-forge spyder‑kernels
 
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-master.sh 
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-slave.sh spark://localhost:7077
-
-
-
-./spark-2.4.5-bin-hadoop2.7/sbin/start-all.sh
-./spark-2.4.5-bin-hadoop2.7/sbin/stop-all.sh
-
-
-sh /usr/local/spark/sbin/start-all.sh
-sh /usr/local/spark/sbin/stop-all.sh 
 
 
 
@@ -198,11 +571,8 @@ PY_SPARK=$PROJECT_DIR/clean_airbnb.py
 
 
 
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 stream_gps.py
 
 
-python process_gps.py
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 process_gps.py 
 
 
 
