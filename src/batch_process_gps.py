@@ -1,4 +1,32 @@
 
+######################################
+# write to s3 stuff here 
+
+# df = pd.read_csv('s3://gps-data-processed/gps_stream_3.csv')
+# fs = s3fs.S3FileSystem(anon=False)
+# fs = s3fs.S3FileSystem(anon=True)
+# fs.ls('gps-data-processed')
+# fs.touch('gps-data-processed/test.txt') 
+# #file_name_input = '/home/craigmatthewsmith/heartRateAlert/data/gps_batch_3.csv'
+# file_name_input  = 's3://gps-data-processed/gps_stream_3.csv'
+# batch_df = pd.read_csv(file_name_input,index_col=0)
+# print(batch_df.head())
+# data = pd.read_csv('s3a://gps-data-processed/gps_batch_3.csv')
+# data = pd.read_csv('s3:/gps-data-processed/gps_batch_3.csv')
+# s3 = s3fs.S3FileSystem(anon=False)
+# with s3.open(f"{BUCKET_NAME}/data_bow_limit40000.csv",'w') as f:
+#     df.to_csv(f)
+# fs.put(file_path,s3_bucket + "/" + rel_path)
+# fs = s3fs.S3FileSystem(anon=False, key='<Access Key>', secret='<Secret Key>')
+# # Use 'w' for py3, 'wb' for py2
+# with s3.open('<bucket-name>/<filename>.csv','w') as f:
+#     df.to_csv(f)
+# fs = s3fs.S3FileSystem(key=key, secret=secret)
+# with fs.open('s3://bucket/path/to/file.csv', 'wb') as f:
+#     f.write(bytes_to_write)
+
+
+
 import os
 import sys
 import numpy as np
@@ -45,12 +73,12 @@ from pyspark.sql.functions import lag, lead, first, last, desc
 # or 4M records per min for 20 min or 66K records per second or 600K participants reporting every 10 sec
 # each file should have 4 M records in it arranged by timestamp
 
-#host_name = 'local'
-host_name = 'master'
+host_name = 'local'
+#host_name = 'master'
 #batch_num = 0
 #batch_num = 1
-batch_num = 2
-#batch_num = 3
+#batch_num = 2
+batch_num = 3
  
 if __name__ == "__main__":
     #if len(sys.argv) != 2:
@@ -70,10 +98,10 @@ if __name__ == "__main__":
         base_dir = '/home/ubuntu'
 
     work_dir = os.path.join(base_dir, 'heartRateAlert')
-    #file_name_input  = os.path.join(work_dir, 'data', 'gps_stream_'+str(batch_num)+'.csv')
-    #file_name_output = os.path.join(work_dir, 'data', 'gps_batch_'+str(batch_num)+'.csv')
-    file_name_input  = 's3a://gps-data-processed/gps_stream_'+str(batch_num)+'.csv'
-    file_name_output = 's3a://gps-data-processed/gps_batch_' +str(batch_num)+'.csv'
+    file_name_input  = os.path.join(work_dir, 'data', 'gps_stream_'+str(batch_num)+'.csv')
+    file_name_output = os.path.join(work_dir, 'data', 'gps_batch_'+str(batch_num)+'.csv')
+    #file_name_input  = 's3a://gps-data-processed/gps_stream_'+str(batch_num)+'.csv'
+    #file_name_output = 's3a://gps-data-processed/gps_batch_' +str(batch_num)+'.csv'
         
     #file_name_csv = '/home/craigmatthewsmith/heartRateAlert/data/data_temp.csv'
         

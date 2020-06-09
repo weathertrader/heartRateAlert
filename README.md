@@ -1,4 +1,61 @@
 
+# on pg 
+install python from miniconda and 
+
+sudo apt-get update && sudo apt upgrade
+sudo apt install postgresql postgresql-contrib
+sudo apt-get install libpq-dev python3-psycopg2
+sudo apt-get install conda
+
+# did not install python-dev but may be needed
+# sudo apt-get install python3-dev
+sudo apt-get install
+
+sudo apt-get install pip
+pip3 install psycopg2
+# dont know if this is needed or not
+pip3 install psycopg2-binary
+
+
+
+# create conda environment for pg
+conda create -n pg_env
+conda activate pg_env
+conda install -c conda-forge psycopg2 numpy pandas
+pip install spyder‑kernels
+
+
+
+
+
+# add this to .bashrc
+export db_name=racecast
+export db_host=localhost
+export db_user_name=ubuntu
+export db_password=your_password_here
+export db_port=5432
+
+# needed for psycopyg2
+
+sudo apt-get install libpq-dev
+# did not install python-dev but may be needed
+sudo apt-get install python3-dev
+sudo apt-get install python3-psycopg2
+
+sudo apt-get install pip
+pip3 install psycopg2
+# dont know if this is needed or not
+pip3 install psycopg2-binary
+
+
+
+# create conda environment for pg
+conda create -n pg_env
+conda activate pg_env
+conda install -c conda-forge psycopg2 numpy pandas
+pip install spyder‑kernels
+
+
 
 sudo apt-get install s3fs
 
@@ -92,7 +149,7 @@ sudo su postgres
 psql
 # to quit
 \q 
-createuser --interactive
+#createuser --interactive
 ubuntu 
 # createdb racecast
 
@@ -120,6 +177,7 @@ DROP DATABASE racecast;
 # create postgresql database and tables 
 sudo su – postgres
 psql
+CREATE USER ubuntu WITH PASSWORD '';
 CREATE DATABASE racecast WITH OWNER ubuntu;
 \q
 
@@ -465,6 +523,7 @@ conda create -n pyspark_env
 conda activate pyspark_env
 conda install -c conda-forge pyspark
 conda install -c conda-forge spyder‑kernels
+conda install -c conda-forge s3fs
 
 
 
