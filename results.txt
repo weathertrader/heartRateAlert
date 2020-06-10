@@ -1,2 +1,0 @@
-Number of lines: 20
-Number of lines with python: 19
