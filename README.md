@@ -55,13 +55,10 @@ conda activate pg_env
 conda install -c conda-forge psycopg2 numpy pandas
 pip install spyder‑kernels
 
+conda install -c conda-forge s3fs
 
 
 sudo apt-get install s3fs
-
-python src/batch_process_gps.py
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py
 
 
 

@@ -1,31 +1,15 @@
 
-######################################
-# write to s3 stuff here 
-
-# df = pd.read_csv('s3://gps-data-processed/gps_stream_3.csv')
-# fs = s3fs.S3FileSystem(anon=False)
-# fs = s3fs.S3FileSystem(anon=True)
-# fs.ls('gps-data-processed')
-# fs.touch('gps-data-processed/test.txt') 
-# #file_name_input = '/home/craigmatthewsmith/heartRateAlert/data/gps_batch_3.csv'
-# file_name_input  = 's3://gps-data-processed/gps_stream_3.csv'
-# batch_df = pd.read_csv(file_name_input,index_col=0)
-# print(batch_df.head())
-# data = pd.read_csv('s3a://gps-data-processed/gps_batch_3.csv')
-# data = pd.read_csv('s3:/gps-data-processed/gps_batch_3.csv')
-# s3 = s3fs.S3FileSystem(anon=False)
-# with s3.open(f"{BUCKET_NAME}/data_bow_limit40000.csv",'w') as f:
-#     df.to_csv(f)
-# fs.put(file_path,s3_bucket + "/" + rel_path)
-# fs = s3fs.S3FileSystem(anon=False, key='<Access Key>', secret='<Secret Key>')
-# # Use 'w' for py3, 'wb' for py2
-# with s3.open('<bucket-name>/<filename>.csv','w') as f:
-#     df.to_csv(f)
-# fs = s3fs.S3FileSystem(key=key, secret=secret)
-# with fs.open('s3://bucket/path/to/file.csv', 'wb') as f:
-#     f.write(bytes_to_write)
 
 
+# submit via pyspark-submit on master using s3 hosted data
+
+# batch_process_gps.py 
+# purpose - batch process gps data 
+# usage:
+
+# spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_0.csv s3a://gps-data-processed/gps_batch_0.csv
+# python3 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_0.csv s3a://gps-data-processed/gps_batch_0.csv
+# python3 src/batch_process_gps.py data/gps_stream_0.csv data/gps_batch_0.csv
 
 import os
 import sys
@@ -35,16 +19,16 @@ from functools import reduce
 import csv
 import time
 import pyspark
+#import s3fs
 
 from pyspark.sql import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql import Row
 from pyspark.sql.functions import abs
-
-#import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.functions import lag, lead, first, last, desc
 
+#import pyspark.sql.functions as F
 #from pyspark.sql.functions import *
 #from pyspark.sql.functions import explode
 #from pyspark.sql.functions import split
@@ -78,59 +62,42 @@ host_name = 'local'
 #batch_num = 0
 #batch_num = 1
 #batch_num = 2
-batch_num = 3
+#batch_num = 3
  
-if __name__ == "__main__":
-    #if len(sys.argv) != 2:
-    #    print("Usage: wordcount <file>", file=sys.stderr)
-    #    sys.exit(-1)
-
-    time_start = time.time()
-    
-    spark = SparkSession\
-        .builder\
-        .appName("process_gps")\
-        .getOrCreate()
-
+manual_debug = False
+#manual_debug = True
+if (manual_debug):
     if   (host_name == 'local'):
         base_dir = '/home/craigmatthewsmith'
+    elif (host_name == 'pg'):
+        base_dir = '/home/ubuntu'
     elif (host_name == 'master'):
         base_dir = '/home/ubuntu'
-
     work_dir = os.path.join(base_dir, 'heartRateAlert')
-    file_name_input  = os.path.join(work_dir, 'data', 'gps_stream_'+str(batch_num)+'.csv')
-    file_name_output = os.path.join(work_dir, 'data', 'gps_batch_'+str(batch_num)+'.csv')
-    #file_name_input  = 's3a://gps-data-processed/gps_stream_'+str(batch_num)+'.csv'
-    #file_name_output = 's3a://gps-data-processed/gps_batch_' +str(batch_num)+'.csv'
-        
-    #file_name_csv = '/home/craigmatthewsmith/heartRateAlert/data/data_temp.csv'
-        
-    #file_name_csv = '/home/craigmatthewsmith/heartRateAlert/data/subset_100.csv'
-    #file_name_csv = '/home/craigmatthewsmith/heartRateAlert/data/gps_tracks_processed_0.csv'
-    #work_dir = '/home/ubuntu'
-    #file_name_csv = '/home/ubuntu/subset_100.csv'
-    #file_name_csv = '/home/ubuntu/subset_1000.csv'
-    #file_name_csv = '/home/ubuntu/subset_10000.csv'
-    #file_name_csv = '/home/ubuntu/subset_100000.csv'
-    #file_name_csv = '/home/ubuntu/subset_1000000.csv'
-    #file_name_csv = '/home/ubuntu/gps_tracks_processed_0.csv'
-
     os.chdir(work_dir)
-    #os.path.isfile(file_name_csv)
-    #file_name_text = '/home/craigmatthewsmith/heartRateAlert/data/temp1.txt'
+else:
+    work_dir = os.getcwd()
+# work_dir = os.path.join(base_dir, 'heartRateAlert')
+
+#print(os.environ.get('db_name'))
+#print(os.environ['db_name'])
+
+
+def main(file_name_input, file_name_output):
+    
+    time_start = time.time()
+    
+    print('start spark session ')
+
+    spark = SparkSession\
+        .builder\
+        .appName("batch_process_gps")\
+        .getOrCreate()
 
     # create as many worker threads as there are logical cores on master 
     #sc = pyspark.SparkContext('local[*]')
 
-    print('mark01')
-
-    spark = SparkSession\
-        .builder\
-        .appName("spark_app_name")\
-        .getOrCreate()
-    
-
-    print('mark02')
+    print('read csv begin ')
 
     df = spark.read.format("csv").option("inferSchema",True).option("header", True).load(file_name_input)
     #df2 = spark.read.load(file_name_csv, format="csv", header="true")
@@ -138,13 +105,21 @@ if __name__ == "__main__":
     #print(df.collect())
     #df.show()
     #df.printSchema()
+
+    print('read csv end ')
+
+    time_end = time.time()
+    process_dt = (time_end - time_start)/60.0
+    print ('read_csv took %5.2f minutes ' %(process_dt))
+    
+    time_start = time.time()
+
+
+    print('drop index column')
     df = df.drop('_c0')
 
-    print('mark05')
-    
+    print('create table_read')    
     df.createOrReplaceTempView("table_read")
-
-    print('mark06')
 
     #sql_df = spark.sql("SELECT * FROM table_read ORDER BY user, dt")
     #sql_df = spark.sql("SELECT * FROM table_read ORDER BY dt,user")
@@ -159,6 +134,7 @@ if __name__ == "__main__":
     #                           FROM table_read""")
 
 
+    print('sql select ')
     df_lon_lat_diff = spark.sql("""SELECT user AS id, dt, \
                                lon, lat, \
                                lon-LAG(lon,1,NULL) OVER (PARTITION BY user ORDER BY dt) \
@@ -167,12 +143,11 @@ if __name__ == "__main__":
                                AS lat_diff \
                                FROM table_read""")
 
-    print('mark07')
     
     #df_lon_lat_diff.show()
     #df_lat_diff.show()
 
-    print('mark10')
+    print('create table_lon_lat_diff')
     
     #df_lat_diff.createOrReplaceTempView("table_lat_diff")
     #df_lon_diff.createOrReplaceTempView("table_lon_diff")
@@ -186,7 +161,7 @@ if __name__ == "__main__":
     #                            AS abs_lon_diff \
     #                            FROM table_lon_diff""")
 
-    print('mark11')
+    print('sql select ')
 
     df_lon_lat_sum = spark.sql("""SELECT id, \
                               sum(abs(lon_diff)) as sum_lon_diff, \
@@ -209,7 +184,6 @@ if __name__ == "__main__":
     #df_lon_sum = spark.sql("""SELECT user, sum(abs(lon_diff)) as sum_lon_diff \
     #                          FROM table_lon_diff GROUP BY (user) \
     #                           """)
-    print('mark12')
     
     #df_lat_diff_abs.createOrReplaceTempView("table_lat_diff_abs")
     #df_lon_diff_abs.createOrReplaceTempView("table_lon_diff_abs")
@@ -222,7 +196,7 @@ if __name__ == "__main__":
     
     #df_lon_sum.show()
 
-    print('mark13')
+    print('create first and last tables')
         
     df_lon_first = spark.sql("""SELECT first(id) AS id, first(lon) AS lon_first FROM table_lon_lat_diff GROUP BY id ORDER BY id""")
     df_lon_last  = spark.sql("""SELECT  last(id) AS id,  last(lon) AS  lon_last FROM table_lon_lat_diff GROUP BY id ORDER BY id""")
@@ -231,7 +205,7 @@ if __name__ == "__main__":
     df_dt_first  = spark.sql("""SELECT first(id) AS id,  first(dt) AS  dt_first FROM table_lon_lat_diff GROUP BY id ORDER BY id""")
     df_dt_last   = spark.sql("""SELECT  last(id) AS id,   last(dt) AS   dt_last FROM table_lon_lat_diff GROUP BY id ORDER BY id""")
 
-    print('mark14')
+    print('join tables')
 
     
     df_processed = df_dt_first.join(df_dt_last,     on=['id'], how='inner') \
@@ -241,19 +215,36 @@ if __name__ == "__main__":
                               .join(df_lat_first,   on=['id'], how='inner') \
                               .join(df_lat_last,    on=['id'], how='inner')
                                
-    print('mark15')
+    print('process data')
                                 
     df_processed.show()
 
-    print('mark16')
+    print('write to csv begin')
     
     df_processed.toPandas().to_csv(file_name_output)    
  
-    print('mark17')
+    print('write to csv end')
     
     time_end = time.time()
     process_dt = (time_end - time_start)/60.0    
     print (f'script took {process_dt:6.3f} minutes ')
+
+
+if __name__ == "__main__":
+    if (len(sys.argv) != 3):
+        print("Usage: python3 batch_process_gps.py file_name_input file_name_output", file=sys.stderr)
+        sys.exit()
+    else:
+        file_name_input  = sys.argv[1]        
+        file_name_output = sys.argv[2]        
+        print('file_name_input  is %s' %(file_name_input))
+        print('file_name_output is %s' %(file_name_output))
+        print('calling main before ')
+        main(file_name_input, file_name_output)
+        print('script executed succesfully ')
+
+
+
 
 #df_first_last = df_lon_first.join(df_lon_last, on=['user'], how='inner') \
 #                            .join(df_lat_first, on=['user'], how='inner') \
@@ -280,8 +271,6 @@ if __name__ == "__main__":
 # # Prints plans including physical and logical
 # df.explain(4)
 
-
-
 # spark = SparkSession.builder \
 #     .master("local") \
 #     .appName("Word Count") \
@@ -296,5 +285,16 @@ if __name__ == "__main__":
 #         print("%s: %i" % (word, count))
 
 #     spark.stop()
+        
+######################################
+# write to s3 stuff here 
+# df = pd.read_csv('s3://gps-data-processed/gps_stream_3.csv')
+# fs = s3fs.S3FileSystem(anon=False)
+# fs = s3fs.S3FileSystem(anon=True)
+# fs.ls('gps-data-processed')
+# fs.touch('gps-data-processed/test.txt') 
+# fs.put(file_path,s3_bucket + "/" + rel_path)
+# fs = s3fs.S3FileSystem(anon=False, key='<Access Key>', secret='<Secret Key>')
+
     
     

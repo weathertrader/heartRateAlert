@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 sleep_interval=5
-echo $sleep_interval
+#echo $sleep_interval
 
 # from s3
 python3 src/update_db.py s3://gps-data-processed/gps_batch_0.csv start
