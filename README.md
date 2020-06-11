@@ -1,4 +1,5 @@
 
+
 # on pg 
 install python from miniconda and 
 
@@ -90,7 +91,7 @@ ec2-34-214-205-202.us-west-2.compute.amazonaws.com
 # slave 3 - done
 ec2-34-215-182-26.us-west-2.compute.amazonaws.com
 
-mkdir -p heartRateAlert/data heartRateAlert/src
+mkdir -p raceCast/data raceCast/src
 # master - done
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
 # slave 1 - done
@@ -104,15 +105,15 @@ ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2
 
 
 # master - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 # slave 1 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 # slave 2 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 # slave 3 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 # pg
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_batch_*.csv ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/heartRateAlert/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_batch_*.csv ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 
 # master - done
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
@@ -1016,9 +1017,9 @@ admin.enableServer=false
 
 Clone the repo and enter the directory.  
 
-```git clone git@github.com:weathertrader/heartRateAlert.git
+```git clone git@github.com:weathertrader/raceCast.git
 
-cd heartRateAlert
+cd raceCast
 ```
 
 Create the python environment and change to it

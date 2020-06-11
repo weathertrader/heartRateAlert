@@ -10,6 +10,12 @@
 # spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_0.csv s3a://gps-data-processed/gps_batch_0.csv
 # python3 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_0.csv s3a://gps-data-processed/gps_batch_0.csv
 # python3 src/batch_process_gps.py data/gps_stream_0.csv data/gps_batch_0.csv
+# new files 
+# python3 src/batch_process_gps.py data/gps_tracks_stream_minute_0.csv data/gps_tracks_batch_minute_0.csv
+
+# spark-submit local machine local data 
+#spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master local src/batch_process_gps.py data/gps_tracks_stream_minute_0.csv data/gps_tracks_batch_minute_0.csv
+
 
 import os
 import sys
@@ -73,11 +79,11 @@ if (manual_debug):
         base_dir = '/home/ubuntu'
     elif (host_name == 'master'):
         base_dir = '/home/ubuntu'
-    work_dir = os.path.join(base_dir, 'heartRateAlert')
+    work_dir = os.path.join(base_dir, 'raceCast')
     os.chdir(work_dir)
 else:
     work_dir = os.getcwd()
-# work_dir = os.path.join(base_dir, 'heartRateAlert')
+# work_dir = os.path.join(base_dir, 'raceCast')
 
 #print(os.environ.get('db_name'))
 #print(os.environ['db_name'])
@@ -121,25 +127,25 @@ def main(file_name_input, file_name_output):
     print('create table_read')    
     df.createOrReplaceTempView("table_read")
 
-    #sql_df = spark.sql("SELECT * FROM table_read ORDER BY user, dt")
-    #sql_df = spark.sql("SELECT * FROM table_read ORDER BY dt,user")
+    #sql_df = spark.sql("SELECT * FROM table_read ORDER BY id, dt")
+    #sql_df = spark.sql("SELECT * FROM table_read ORDER BY dt,id")
     #sql_df.show()
 
-    # df_lon_diff = spark.sql("""SELECT user, dt, lon, lon-LAG(lon,1,NULL) OVER (PARTITION BY user ORDER BY dt) \
+    # df_lon_diff = spark.sql("""SELECT id, dt, lon, lon-LAG(lon,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
     #                            AS lon_diff \
     #                            FROM table_read""")
     
-    #df_lat_diff = spark.sql("""SELECT user AS id, dt, lat, lat-LAG(lat,1,NULL) OVER (PARTITION BY user ORDER BY dt) \
+    #df_lat_diff = spark.sql("""SELECT id AS id, dt, lat, lat-LAG(lat,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
     #                            AS lat_diff \
     #                           FROM table_read""")
 
 
     print('sql select ')
-    df_lon_lat_diff = spark.sql("""SELECT user AS id, dt, \
+    df_lon_lat_diff = spark.sql("""SELECT id AS id, dt, \
                                lon, lat, \
-                               lon-LAG(lon,1,NULL) OVER (PARTITION BY user ORDER BY dt) \
+                               lon-LAG(lon,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
                                AS lon_diff, \
-                               lat-LAG(lat,1,NULL) OVER (PARTITION BY user ORDER BY dt) \
+                               lat-LAG(lat,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
                                AS lat_diff \
                                FROM table_read""")
 
@@ -153,11 +159,11 @@ def main(file_name_input, file_name_output):
     #df_lon_diff.createOrReplaceTempView("table_lon_diff")
     df_lon_lat_diff.createOrReplaceTempView("table_lon_lat_diff")
     
-    # df_lat_diff_abs = spark.sql("""SELECT user, dt, lat, abs(lat_diff) \
+    # df_lat_diff_abs = spark.sql("""SELECT id, dt, lat, abs(lat_diff) \
     #                            AS abs_lat_diff \
     #                            FROM table_lat_diff""")
     
-    # df_lon_diff_abs = spark.sql("""SELECT user, dt, lon, abs(lon_diff) \
+    # df_lon_diff_abs = spark.sql("""SELECT id, dt, lon, abs(lon_diff) \
     #                            AS abs_lon_diff \
     #                            FROM table_lon_diff""")
 
@@ -177,21 +183,21 @@ def main(file_name_input, file_name_output):
     #                              FROM table_lon_lat_diff GROUP BY (id) \
     #                           """)
 
-    #df_lat_sum = spark.sql("""SELECT user, sum(abs(lat_diff)) as sum_lat_diff \
-    #                          FROM table_lat_diff GROUP BY (user) \
+    #df_lat_sum = spark.sql("""SELECT id, sum(abs(lat_diff)) as sum_lat_diff \
+    #                          FROM table_lat_diff GROUP BY (id) \
     #                           """)
 
-    #df_lon_sum = spark.sql("""SELECT user, sum(abs(lon_diff)) as sum_lon_diff \
-    #                          FROM table_lon_diff GROUP BY (user) \
+    #df_lon_sum = spark.sql("""SELECT id, sum(abs(lon_diff)) as sum_lon_diff \
+    #                          FROM table_lon_diff GROUP BY (id) \
     #                           """)
     
     #df_lat_diff_abs.createOrReplaceTempView("table_lat_diff_abs")
     #df_lon_diff_abs.createOrReplaceTempView("table_lon_diff_abs")
-    #df_lat_sum = spark.sql("""SELECT user, sum(abs_lat_diff) as sum_lat_diff \
-    #                          FROM table_lat_diff_abs GROUP BY (user) \
+    #df_lat_sum = spark.sql("""SELECT id, sum(abs_lat_diff) as sum_lat_diff \
+    #                          FROM table_lat_diff_abs GROUP BY (id) \
     #                           """)
-    #df_lon_sum = spark.sql("""SELECT user, sum(abs_lon_diff) as sum_lon_diff \
-    #                          FROM table_lon_diff_abs GROUP BY (user) \
+    #df_lon_sum = spark.sql("""SELECT id, sum(abs_lon_diff) as sum_lon_diff \
+    #                          FROM table_lon_diff_abs GROUP BY (id) \
     #                           """)
     
     #df_lon_sum.show()
@@ -246,9 +252,9 @@ if __name__ == "__main__":
 
 
 
-#df_first_last = df_lon_first.join(df_lon_last, on=['user'], how='inner') \
-#                            .join(df_lat_first, on=['user'], how='inner') \
-#                            .join(df_lat_last, on=['user'], how='inner') \
+#df_first_last = df_lon_first.join(df_lon_last, on=['id'], how='inner') \
+#                            .join(df_lat_first, on=['id'], how='inner') \
+#                            .join(df_lat_last, on=['id'], how='inner') \
       
 # # Returns dataframe column names and data types
 # df.dtypes

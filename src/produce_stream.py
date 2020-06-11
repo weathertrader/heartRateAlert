@@ -20,7 +20,7 @@ from multiprocessing import Process
 #import psutil
 #from multiprocessing import Pool
 
-# dir_work = '/home/craigmatthewsmith/heartRateAlert'
+# dir_work = '/home/craigmatthewsmith/raceCast'
 # os.chdir(dir_work)
 # dir_work = os.getcwd()
 #print('working directory is %s ' %(os.getcwd()))
@@ -34,7 +34,7 @@ from multiprocessing import Process
 
 # debugging 
 # input_file = 'data/processed_data_0.csv'
-#dir_work = '/home/craigmatthewsmith/heartRateAlert'
+#dir_work = '/home/craigmatthewsmith/raceCast'
 #os.chdir(dir_work)
 
 def stream_data(input_file, line_delay):

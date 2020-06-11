@@ -54,7 +54,7 @@ if (manual_debug):
         base_dir = '/home/ubuntu'
     elif (host_name == 'master'):
         base_dir = '/home/ubuntu'
-    work_dir = os.path.join(base_dir, 'heartRateAlert')
+    work_dir = os.path.join(base_dir, 'raceCast')
     os.chdir(work_dir)
 else:
     work_dir = os.getcwd()
@@ -135,13 +135,14 @@ def main(file_name_input, drop_and_create_table):
     n = 0
     #for n in range(0, 1, 1):    
     for n in range(0, n_ids, 1):    
-        print('  processing user %5.0f of %5.0f ' %(n, n_ids))
+        if (n%1000 ==0 ):
+            print('  processing user %5.0f of %5.0f ' %(n, n_ids))
         sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (int(batch_df['id'][n]))
         cursor.execute(sql_statement)
         results = cursor.fetchall()
         if   (len(results) == 0):
             total_dist_new = total_dist[n]
-            print('    no entries found')
+            #print('    no entries found')
         elif (len(results) > 0):
             #print(results)
             [userid_prev, dt_prev, lon_last_prev, lat_last_prev, total_dist_prev] = results[0]
