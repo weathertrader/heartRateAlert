@@ -1,6 +1,7 @@
 # data_preprocess.py 
 # reads in raw gps data and write a csv ordered by timestamp 
 # usage: 
+# python src/data_preprocess.py 2
 # python preprocess/data_preprocess.py data/endomondoHR_proper.json processed_data.csv
 # python preprocess/data_preprocess.py data/gps_tracks_0.txt gps_tracks_processed_0.csv
 
@@ -24,17 +25,17 @@ import time
 #dir_work = '/home/craigmatthewsmith/heartRateAlert'
 #os.chdir(dir_work)
 
-#manual_debug = False
-manual_debug = True
-if (manual_debug):
-    base_dir = '/home/craigmatthewsmith'
-    work_dir = os.path.join(base_dir, 'raceCast')
-    os.chdir(work_dir)
-else:
-    work_dir = os.getcwd()
+manual_debug = False
+#manual_debug = True
+#if (manual_debug):
+#    base_dir = '/home/craigmatthewsmith'
+#    work_dir = os.path.join(base_dir, 'raceCast')
+#    os.chdir(work_dir)
+#else:
+#    work_dir = os.getcwd()
 
 #def preprocess_inputs(input_file, output_file):
-def preprocess_inputs():
+def preprocess_inputs(n_files):
     
     print('file read begin ')
 
@@ -64,9 +65,7 @@ def preprocess_inputs():
     #end_count = start_count + n_activities
     #print ('  subset %6.0f of %6.0f, start_count %6.0f, end_count %6.0f ' %(subset, n_subset, start_count, end_count))
  
- 
     #data_all   = np.full([n_activities*n_records,4], np.nan, dtype=float)
-
 
     # dt_max is 17985.0 or 5.0 hours, should dt_all = dt_all/10.0, would need to cast to float
 
@@ -77,13 +76,16 @@ def preprocess_inputs():
     dt_max_expected = 20000.0
     dt_int = dt_max_expected/n_batch
     n = 1
-    #for n in range(0, n_batch, 1):
-    for n in range(2, 4, 1):
+    #for n in range(0, 4, 1):
+    for n in range(0, n_batch, 1):
         count_all = 0
         [dt_min_n, dt_max_n] = [n*dt_int, (n+1)*dt_int]
         print('  processing n %s of %s, dt %s - %s ' %(n, n_batch, dt_min_n, dt_max_n))
+
         #output_file = 'data/gps_tracks_stream_minute_'+str(n)+'.csv'    
-        output_file = 's3a://gps-data-processed/gps_tracks_stream_minute_'+str(n)+'.csv'    
+        #output_file = 's3a://gps-data-processed/gps_stream_minute_'+str(n)+'_'+str(n_files)+'.csv'
+        output_file = 's3a://gps-data-processed/gps_stream_dt_'+str(n).rjust(2,'0')+'_f_'+str(n_files).rjust(2,'0')+'.csv'
+        print('  output_file is %s ' %(output_file))        
 
         lon_all = np.full([max_records_per_batch], np.nan, dtype=float)
         lat_all = np.full([max_records_per_batch], np.nan, dtype=float)
@@ -91,9 +93,8 @@ def preprocess_inputs():
         id_all  = np.full([max_records_per_batch], 0, dtype=int)
         hr_all  = np.full([max_records_per_batch], 0, dtype=int)
         
-        n_files = 9        
-        #for f in range(0, n_files, 1):
-        for f in range(0, 2, 1):
+        #for f in range(0, 2, 1):
+        for f in range(0, n_files, 1):
             input_file  = 'data/gps_tracks_'+str(f)+'.txt'
             #input_file  = 's3a://gps-data-processed/gps_tracks_'+str(f)+'.txt'
             id_start = n_activities*f
@@ -252,7 +253,6 @@ def preprocess_inputs():
         
         #data_all = np.array([dt_all[index_sort], id_all[index_sort], lon_all[index_sort], hr_all[index_sort], lat_all[index_sort]]).T
         print('  sort by time end ')
-        print('  output_file is %s ' %(output_file))
         print('  write file start ')
         data_df.to_csv(output_file) 
         print('  write file end ')
@@ -286,11 +286,12 @@ def preprocess_inputs():
         #dt_file  =  dt_file - np.nanmin( dt_file)
 
 if __name__ == '__main__':
-    #input_file  = sys.argv[1]
+    n_files = int(sys.argv[1])
+    #n_files = 9        
     #output_file = sys.argv[2]
     #print('using input  file %s ' %(input_file))
     #print('using output file %s ' %(output_file))
-    preprocess_inputs()
+    preprocess_inputs(n_files)
 
 
 # input_file_open = open(input_file,'r')

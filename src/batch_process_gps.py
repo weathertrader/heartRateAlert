@@ -1,6 +1,4 @@
 
-
-
 # submit via pyspark-submit on master using s3 hosted data
 
 # batch_process_gps.py 
@@ -91,7 +89,10 @@ else:
 
 def main(file_name_input, file_name_output):
     
-    time_start = time.time()
+
+    time_start_all = time.time()
+
+    time_start_read = time.time()
     
     print('start spark session ')
 
@@ -100,12 +101,36 @@ def main(file_name_input, file_name_output):
         .appName("batch_process_gps")\
         .getOrCreate()
 
+    # spark.conf.set("spark.executor.instances", 4)
+    # spark.conf.set("spark.executor.cores", 4)
+
     # create as many worker threads as there are logical cores on master 
     #sc = pyspark.SparkContext('local[*]')
 
     print('read csv begin ')
 
     df = spark.read.format("csv").option("inferSchema",True).option("header", True).load(file_name_input)
+
+
+    # pyspark --packages com.databricks:spark-csv_2.11:1.4.0
+    
+    # schema = StructType([
+    #     StructField("_c0", IntegerType()),
+    #     StructField("dt", IntegerType()),
+    #     StructField("lon", DoubleType()),
+    #     StructField("lat", DoubleType()),
+    #     StructField("hr", IntegerType())
+    # ])
+    
+    # # ,dt,id,lon,lat,hr
+    # # 0,2000,5509,0.017979517579078674,0.01461024396121502,149
+    # # 1,2000,37147,0.02834843471646309,-0.017346767708659172,148
+    
+    #     df = spark.read.format("csv").schema(schema).option("header",True).load(file_name_input)
+    #     df = spark.read.format("com.databricks.spark.csv").schema(schema).option("header",True).load(file_name_input)
+    
+
+
     #df2 = spark.read.load(file_name_csv, format="csv", header="true")
     #display(df)
     #print(df.collect())
@@ -114,11 +139,10 @@ def main(file_name_input, file_name_output):
 
     print('read csv end ')
 
-    time_end = time.time()
-    process_dt = (time_end - time_start)/60.0
-    print ('read_csv took %5.2f minutes ' %(process_dt))
+    time_end_read = time.time()
+    process_dt_read = (time_end_read - time_start_read)/60.0
     
-    time_start = time.time()
+    time_start_df = time.time()
 
 
     print('drop index column')
@@ -139,7 +163,6 @@ def main(file_name_input, file_name_output):
     #                            AS lat_diff \
     #                           FROM table_read""")
 
-
     print('sql select ')
     df_lon_lat_diff = spark.sql("""SELECT id AS id, dt, \
                                lon, lat, \
@@ -149,7 +172,6 @@ def main(file_name_input, file_name_output):
                                AS lat_diff \
                                FROM table_read""")
 
-    
     #df_lon_lat_diff.show()
     #df_lat_diff.show()
 
@@ -223,17 +245,31 @@ def main(file_name_input, file_name_output):
                                
     print('process data')
                                 
-    df_processed.show()
+    #df_processed.show()
+
+    time_end_df = time.time()
+    process_dt_df = (time_end_df - time_start_df)/60.0    
 
     print('write to csv begin')
+    time_start_write = time.time()
+
     
     df_processed.toPandas().to_csv(file_name_output)    
  
     print('write to csv end')
     
-    time_end = time.time()
-    process_dt = (time_end - time_start)/60.0    
-    print (f'script took {process_dt:6.3f} minutes ')
+    time_end_write = time.time()
+    process_dt_write = (time_end_write - time_start_write)/60.0    
+
+    time_end_all = time.time()
+    process_dt = (time_end_all - time_start_all)/60.0    
+
+
+    print (f'read    took {process_dt_read :6.2f} minutes ')
+    print (f'process took {process_dt_df   :6.2f} minutes ')
+    print (f'write   took {process_dt_write:6.2f} minutes ')
+    print (f'all     took {process_dt      :6.2f} minutes ')
+
 
 
 if __name__ == "__main__":

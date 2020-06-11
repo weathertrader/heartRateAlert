@@ -1,5 +1,26 @@
 
 
+vi /usr/local/spark/conf/slaves
+
+bash /usr/local/spark/sbin/start-all.sh
+bash /usr/local/spark/sbin/stop-all.sh 
+
+
+
+# connect to postgres in spark 
+
+df.write 
+  .format("jdbc") 
+  .mode(action)
+  .option("url", "jdbc:postgresql://10.0.0.9:5432/"+os.environ['PSQL_DB']) 
+  .option("dbtable", table_name) 
+  .option("user", os.environ['PSQL_UNAME']) 
+  .option("driver", "org.postgresql.Driver")
+  .option("password",os.environ['PSQL_PWD'])
+  .save()
+
+
+
 # on pg 
 install python from miniconda and 
 
@@ -78,7 +99,7 @@ bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-slave.sh
 sh /usr/local/spark/sbin/start-all.sh
 sh /usr/local/spark/sbin/stop-all.sh 
 
-
+aws s3 cp s3://gps-data-processed/gps_stream_minute_0_1.csv .
 
 # pg instance 
 ec2-34-216-105-134.us-west-2.compute.amazonaws.com
@@ -613,19 +634,6 @@ spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com 
 spark-submit --master local[4] simpleapp.py
 
 ```
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 /usr/local/spark/examples/src/main/python/pi.py 1000
-
-
-export PYSPARK_PYTHON=/usr/bin/python3
-
-
-
-SPARK_MASTER=spark://10.0.0.5:7077
-SPAKR_SUBMIT=/usr/local/spark/bin/spark-submit
-PY_SPARK=$PROJECT_DIR/clean_airbnb.py
-
-
-
 
 
 
