@@ -1,25 +1,188 @@
 
 
+
+###############################################################################
+###############################################################################
+# general scp and ssh
+
+# worker 4
+ec2-34-219-195-126.us-west-2.compute.amazonaws.com
+# worker 5
+ec2-34-214-104-123.us-west-2.compute.amazonaws.com
+# pg instance 
+ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+# ssh keys master -> slave 4 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# ssh keys master -> slave5
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+rm -rf /usr/local/spark/work/app*
+
+# master
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+# worker 1
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+# worker 2
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+# worker 3 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+# worker 4 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com
+# worker 5 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com
+# pg 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+# master  
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# worker 1
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# worker 2
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# worker 3 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# worker 4 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem spark-2.4.5-bin-hadoop2.7.tgz ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+# salve 5
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem spark-2.4.5-bin-hadoop2.7.tgz ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+
+# master to pg done 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# pg to master done 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+
+
+###############################################################################
+
+
+###############################################################################
+##  Spark Setup
+
+sudo apt-get update && sudo apt upgrade
+sudo apt-get install openjdk-8-jre-headless
+# note here I had to install 11 since 8 did not work 
+sudo apt-get install scala
+v 2.11.12
+scala -version
+wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
+
+tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
+sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
+
+
+# install miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod 775 that file and execute it then
+source ~/.bashrc
+conda update conda
+conda config --add channels conda-forge
+conda install -c conda-forge pyspark
+
+edit .profile
+edit .bashrc
+edit .aws/config
+edit .aws/credentials
+
+vi /usr/local/spark/conf/spark-env.sh
+
+
+vi /usr/local/spark/conf/slaves
+ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+ec2-34-219-195-126.us-west-2.compute.amazonaws.com
+ec2-34-214-104-123.us-west-2.compute.amazonaws.com
+
+vi ~/.profile
+export PATH=/usr/local/spark/bin:$PATH
+source ~/.profile
+
+
+edit the following file 
+
+
+# contents of conf/spark-env.sh
+export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# For PySpark use
+export PYSPARK_PYTHON=python3
+
+vi /usr/local/spark/conf/spark-env.sh
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+
+vi ~/.profile
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+vi ~/.bashrc
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+# set spark paths
+/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+
+vi /usr/local/spark/conf/spark-env.sh
+export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+ec2 only
+export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+vi ~/.bashrc
+export PATH=/home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/bin:$PATH
+export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
+ec2 only 
+export PATH=/usr/local/spark/bin:$PATH
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+and source 
+
+
+#vi ~/.profile
+#export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+#export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
+#and source 
+
+
+
+###############################################################################
+# spark start and stop 
+
+http://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:8080
+
+# edit number of workers 
 vi /usr/local/spark/conf/slaves
 
+# master spark
 bash /usr/local/spark/sbin/start-all.sh
 bash /usr/local/spark/sbin/stop-all.sh 
+sh /usr/local/spark/sbin/start-all.sh
+sh /usr/local/spark/sbin/stop-all.sh 
+
+# local spark
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-master.sh 
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-slave.sh spark://localhost:7077
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-master.sh 
+bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-slave.sh 
+./spark-2.4.5-bin-hadoop2.7/sbin/start-all.sh
+./spark-2.4.5-bin-hadoop2.7/sbin/stop-all.sh
+
+# spark start and stop 
+###############################################################################
 
 
 
-# connect to postgres in spark 
-
-df.write 
-  .format("jdbc") 
-  .mode(action)
-  .option("url", "jdbc:postgresql://10.0.0.9:5432/"+os.environ['PSQL_DB']) 
-  .option("dbtable", table_name) 
-  .option("user", os.environ['PSQL_UNAME']) 
-  .option("driver", "org.postgresql.Driver")
-  .option("password",os.environ['PSQL_PWD'])
-  .save()
-
-
+# create conda environment 
+conda create -n pyspark_env
+conda activate pyspark_env
+conda install -c conda-forge pyspark
+conda install -c conda-forge spyder‑kernels
+conda install -c conda-forge s3fs
 
 # on pg 
 install python from miniconda and 
@@ -45,6 +208,18 @@ conda create -n pg_env
 conda activate pg_env
 conda install -c conda-forge psycopg2 numpy pandas
 pip install spyder‑kernels
+
+# connect to postgres in spark 
+
+df.write 
+  .format("jdbc") 
+  .mode(action)
+  .option("url", "jdbc:postgresql://10.0.0.9:5432/"+os.environ['PSQL_DB']) 
+  .option("dbtable", table_name) 
+  .option("user", os.environ['PSQL_UNAME']) 
+  .option("driver", "org.postgresql.Driver")
+  .option("password",os.environ['PSQL_PWD'])
+  .save()
 
 
 
@@ -84,80 +259,8 @@ sudo apt-get install s3fs
 
 
 
-
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-master.sh 
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/start-slave.sh spark://localhost:7077
-
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-master.sh 
-bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-slave.sh 
-
-
-./spark-2.4.5-bin-hadoop2.7/sbin/start-all.sh
-./spark-2.4.5-bin-hadoop2.7/sbin/stop-all.sh
-
-
-sh /usr/local/spark/sbin/start-all.sh
-sh /usr/local/spark/sbin/stop-all.sh 
-
-aws s3 cp s3://gps-data-processed/gps_stream_minute_0_1.csv .
-
-# pg instance 
-ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-# master - done
-ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-# slave 1 - done
-ec2-18-237-177-6.us-west-2.compute.amazonaws.com
-# slave 2 - done
-ec2-34-214-205-202.us-west-2.compute.amazonaws.com
-# slave 3 - done
-ec2-34-215-182-26.us-west-2.compute.amazonaws.com
-
-mkdir -p raceCast/data raceCast/src
-# master - done
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-# slave 1 - done
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
-# slave 2 - done
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
-# slave 3 - done
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
-# pg 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-
-
-# master - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
-# slave 1 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
-# slave 2 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
-# slave 3 - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_stream_*.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
+###############################################################################
 # pg
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_batch_*.csv ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
-
-# master - done
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
-# slave 1
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
-# slave 2
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
-# slave 3 
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
-
-
-###############################################################################
-###############################################################################
-
-# pg instance 
-ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-
-# master to pg done 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
-# pg to master done 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
 
 # install pg on pg server 
 ssh ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
@@ -255,18 +358,6 @@ Add IP to pg_hba.conf
 psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 CREATE TABLE leaderboard (
   user       INTEGER PRIMARY KEY,
   dt         FLOAT,
@@ -323,12 +414,6 @@ CREATE TABLE rolling (
   lat_last       FLOAT, 
 PRIMARY KEY (user)
 );
-
-
-
-
-
-
 
 
 ## sudo adduser importer
@@ -495,225 +580,16 @@ Inline-style:
 bucket name is 
 gps-data-processed
 
-## Apache Setup on local
 
-sudo apt-get update && sudo apt upgrade
-sudo apt-get install openjdk-8-jre-headless
-# note here I had to install 11 since 8 did not work 
-sudo apt-get install scala
-v 2.11.12
-scala -version
-wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
 
-tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
-sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
 
 
-/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
 
-vi /usr/local/spark/conf/spark-env.sh
-export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
-ec2 only
-export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 
-vi ~/.bashrc
-export PATH=/home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/bin:$PATH
-export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
-ec2 only 
-export PATH=/usr/local/spark/bin:$PATH
-export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
-and source 
 
 
-#vi ~/.profile
-#export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-#export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
-#and source 
-
-
-
-# create conda environment 
-conda create -n pyspark_env
-conda activate pyspark_env
-conda install -c conda-forge pyspark
-conda install -c conda-forge spyder‑kernels
-conda install -c conda-forge s3fs
-
-
-
-
-## Apache Setup on EC2
-
-ssh into each instance 
-```
-sudo apt-get update && sudo apt upgrade
-sudo apt-get install openjdk-8-jre-headless
-sudo apt-get install scala
-
-```
-and check the scala version, expecting 2.11.12
-```
-scala -version
-```
-on the master install ssh server 
-```
-# not needed, aleady installed 
-sudo apt install openssh-server openssh-client
-```
-download spark 
-```
-wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
-```
-
-extract the zipped file to /usr/local/spark and add the spark/bin into PATH variable.
-
-```
-tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
-sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
-vi ~/.profile
-export PATH=/usr/local/spark/bin:$PATH
-source ~/.profile
-```
-
-edit the following file 
-
-```
-vi /usr/local/spark/conf/spark-env.sh
-
-# contents of conf/spark-env.sh
-export SPARK_MASTER_HOST=ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-# For PySpark use
-export PYSPARK_PYTHON=python3
-```
-
-and 
-
-```
-vi /usr/local/spark/conf/slaves
-
-ec2-18-237-177-6.us-west-2.compute.amazonaws.com
-ec2-34-214-205-202.us-west-2.compute.amazonaws.com
-ec2-34-215-182-26.us-west-2.compute.amazonaws.com
-```
-
-now start and stop the cluster with 
-
-```
-sh /usr/local/spark/sbin/start-all.sh
-sh /usr/local/spark/sbin/stop-all.sh 
-
-```
-
-
-install miniconda
-```
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-chmod 775 that file and execute it then
-
-source ~/.bashrc
-
-conda update conda
-conda config --add channels conda-forge
-conda install -c conda-forge pyspark
-```
-
-run the examples 
-
-```
-python simpleapp.py
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com simpleapp.py:7077
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com simpleapp.py
-
-spark-submit --master local[4] simpleapp.py
-
-```
-
-
-
-
-
-
-
-
-
-vi /usr/local/spark/conf/spark-env.sh
-export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
-
-vi ~/.profile
-export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
-and source 
-
-vi ~/.bashrc
-export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
-and source 
-
-
-
-
-
-```
-
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
-python wordcount.py segment.paths.gz
-
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
-
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
-
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
-
-
-
-
-does not work
-spark-submit --executor-memory 16g --executor-cores 4 --driver-memory 8g --driver-cores 2 --deploy-mode client --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
-spark-submit --executor-memory 4g --executor-cores 2 --driver-memory 4g --driver-cores 2 --deploy-mode client --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
-
-```
-
-
-# wordcount w local data
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py segment.paths.gz
-# wordcount w s3data commoncrawl
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
-# wordcount w s3data mine 
-spark-submit --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
-
-
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://gps-data-processed/segment.paths.gz
-
-
-
-sudo apt-get install python-pip
-
-pip install pyspark
-
-
-now try running the word count script 
-```
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 wordcount.py s3a://commoncrawl/crawl-data/CC-MAIN-2020-16/segment.paths.gz
-```
-
-
-http://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:8080
-
-
-
-
+###############################################################################
 
 ## Kafka Setup
 
@@ -792,14 +668,6 @@ scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/streaming.py ubuntu@ec2-54-202-
 
 
 
-# master
-ssh ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-
-ssh ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
-
-ssh ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
-ssh ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
-
 
 
 ###############################################################################
@@ -807,14 +675,6 @@ ssh ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
 Start a multi-core cluster across multiple nodes 
 scp the server*.properties to their appropriate nodess
 
-# master
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server.properties ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
-# slave 1
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-1.properties ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
-# slave 2
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-2.properties ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
-# slave 3 
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem config/server-3.properties ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/kafka_2.12-2.5.0/config/.
 
 Now start the zookeeper server on master 
 

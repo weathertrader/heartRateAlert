@@ -5,6 +5,11 @@ source ~/.profile
 sleep_interval=5
 #echo $sleep_interval
 
+# default submit script 
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_minute_0_1.csv s3a://gps-data-processed/gps_batch_dt_00_f_1.csv
+
+
+
 
 # get cores running in script
 executor_count = len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()) - 1
