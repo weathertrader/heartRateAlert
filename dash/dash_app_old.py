@@ -7,7 +7,6 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import psycopg2
 import pandas as pd
-import numpy as np
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -83,45 +82,33 @@ userid = 33753
 print(results)
 
 
-df2 = pd.DataFrame(np.array([
-                  [1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012], 
-                  [219, 146, 112, 127, 124, 180, 236, 207, 236, 263, 350, 430, 474, 526, 488, 537, 500, 439],
-                  [16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270, 299, 340, 403, 549, 499],
-                  [26, 43, 50, 51, 68, 67, 23, 25, 16, 18, 15, 16, 90, 99, 94, 93, 22, 26],
-                  ]).T,
-                  columns=['years', 'values1', 'values2', 'values3'])
-
-# x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#    2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-# y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
-#    350, 430, 474, 526, 488, 537, 500, 439],
-
-
 #    html.H1(children='RaceCast: Live Race Leaderboard'),
 #app.layout = html.Div(children=[
 app.layout = html.Div([
     html.H1('RaceCast: Live Race Leaderboard'),
     generate_table(leaders_df),
     html.Label('Enter Athlete ID'),
-    dcc.Input(id='div_user_id_text_box1', value='1', type='text'),
-    dcc.Input(id='div-user_id_text_box2', value='2', type='text'),
+    dcc.Input(id='user_id_text_box1', value='1', type='text'),
+    dcc.Input(id='user_id_text_box2', value='2', type='text'),
     html.Div(id='div-display-userid'),
-
     dcc.Graph(
-        id='div-figure1',
         figure=dict(
             data=[
                 dict(
-                    x=df2['years'],
-                    y=df2['values1'],
+                    x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+                       2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
+                    y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
+                       350, 430, 474, 526, 488, 537, 500, 439],
                     name='Rest of world',
                     marker=dict(
                         color='rgb(55, 83, 109)'
                     )
                 ),
                 dict(
-                    x=df2['years'],
-                    y=df2['values2'],
+                    x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+                       2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
+                    y=[16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270,
+                       299, 340, 403, 549, 499],
                     name='China',
                     marker=dict(
                         color='rgb(26, 118, 255)'
@@ -139,48 +126,11 @@ app.layout = html.Div([
             )
         ),
         style={'height': 300},
-    ),
-    html.Div(id='div-figure2')
+        id='my-graph'
+    ) 
+    
     #dcc.Graph(id='graph1')
 ])
-
-@app.callback(
-    Output(component_id='div-figure2',component_property='children'),
-    [Input(component_id='div_user_id_text_box1',component_property='value')]    
-)
-def update_graph(div_user_id_text_box1):
-    return dcc.Graph(
-        figure=dict(
-            data=[
-                dict(
-                    x=df2['years'],
-                    y=df2['values1'],
-                    name='Rest of world',
-                    marker=dict(color='rgb(55, 83, 109)')),
-                dict(
-                    x=df2['years'],
-                    y=df2['values2'],
-                    name='China',
-                    marker=dict(color='rgb(26, 118, 255)')),
-                dict(
-                    x=df2['years'],
-                    y=df2['values3'],
-                    name=div_user_id_text_box1,
-                    marker=dict(color='rgb(16, 94, 155)'))
-            ],
-            layout=dict(
-                title='userid is '+str(div_user_id_text_box1)+' now ',
-                showlegend=True,
-                legend=dict(
-                    x=0,
-                    y=1.0
-                ),
-                margin=dict(l=40, r=0, t=40, b=30)
-            )
-        ),
-        style={'height': 300},
-    )
-
 
 
 #app.layout = html.Div([
@@ -188,70 +138,11 @@ def update_graph(div_user_id_text_box1):
 
 
 
-# @app.callback(
-#     Output('div-figure2', 'figure'),
-#     [Input('div-user_id_text_box2', 'value')])
-# def update_figure(selected_year):
-#     return {
-
-#         'data': traces,
-#         'layout': dict(
-#             xaxis={'type': 'log', 'title': 'GDP Per Capita',
-#                    'range':[2.3, 4.8]},
-#             yaxis={'title': 'Life Expectancy', 'range': [20, 90]},
-#             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-#             legend={'x': 0, 'y': 1},
-#             hovermode='closest',
-#             transition = {'duration': 500},
-#         )
-        
-        
-
-#         dcc.Graph(
-#             figure=dict(
-#                 data=[
-#                     dict(
-#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-#                         y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
-#                            350, 430, 474, 526, 488, 537, 500, 439],
-#                         name='Rest of world',
-#                         marker=dict(
-#                             color='rgb(55, 83, 109)'
-#                         )
-#                     ),
-#                     dict(
-#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-#                         y=[16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270,
-#                            299, 340, 403, 549, 499],
-#                         name='China',
-#                         marker=dict(
-#                             color='rgb(26, 118, 255)'
-#                         )
-#                     )
-#                 ],
-#                 layout=dict(
-#                     title='US Export of Plastic Scrap',
-#                     showlegend=True,
-#                     legend=dict(
-#                         x=0,
-#                         y=1.0
-#                     ),
-#                     margin=dict(l=40, r=0, t=40, b=30)
-#                 )
-#             )
-#             )
-#         }
-
-
-
-
 
 
 @app.callback(
     Output('div-display-userid', 'children'),
-    [Input('div-user_id_text_box2',  'value')]
+    [Input('user_id_text_box2',  'value')]
 )
 def update_output_div(input_value):
     return 'You\'ve entered "{}"'.format(input_value)
