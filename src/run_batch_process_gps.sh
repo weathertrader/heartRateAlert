@@ -5,6 +5,9 @@ source ~/.profile
 sleep_interval=5
 #echo $sleep_interval
 
+# ezras submit command 
+time spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7,net.java.dev.jets3t:jets3t:0.9.4 --master spark://<MASTER_EC2_IP_ADDRESS>:7077 --conf spark.dynamicAllocation.enabled=false --executor-memory 4G --num-executors 10 --executor-cores 2 <name_of_pyspark_script_to_run>.py '<pyspark_script_argument'
+
 # default submit script 
 spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_minute_0_1.csv s3a://gps-data-processed/gps_batch_dt_00_f_1.csv
 

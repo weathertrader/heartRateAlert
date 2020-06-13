@@ -260,6 +260,17 @@ sudo apt-get install s3fs
 
 
 ###############################################################################
+# dash 
+conda create -n dash_env
+conda activate dash_env
+conda install -c conda-forge psycopg2 numpy pandas dash falcon
+pip install spyder‑kernels
+
+# dash
+###############################################################################
+
+
+###############################################################################
 # pg
 
 # install pg on pg server 
