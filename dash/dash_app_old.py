@@ -7,6 +7,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import psycopg2
 import pandas as pd
+import numpy as np
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -28,6 +29,16 @@ def open_connection_to_db():
         print      ('open_connection_to_db: ERROR ') 
     return conn, cursor
 
+
+def get_checkpoints_by_userid(conn,cursor,userid):
+    sql_statement = """SELECT userid, dt, segment_dist, total_dist FROM checkpoints WHERE userid = '%s'""" % (int(userid))
+    user_checkpoint_df = pd.read_sql(sql_statement,conn)
+    #print(user_checkpoint_df.head())
+    #user_last_checkpoint = user_checkpoint_df.iloc[0]['userid']
+    #if (batch_df['id'][n] == 1):
+    #    print('    found checkpoint user %s dt %5.1f lon %5.1f lat %5.1f  segment_dist %5.1f ' %(user_checkpoint_df.iloc[-1]['userid'], user_checkpoint_df.iloc[-1]['dt'], user_checkpoint_df.iloc[-1]['lon_last'], user_checkpoint_df.iloc[-1]['lat_last'], user_checkpoint_df.iloc[-1]['segment_dist']))
+    return user_checkpoint_df
+
 def get_leaders_from_db(conn,cursor):
     # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
     # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist 
@@ -36,14 +47,15 @@ def get_leaders_from_db(conn,cursor):
                                ORDER BY total_dist DESC
                                LIMIT 10"""
     leaders_df = pd.read_sql(sql_statement,conn)
+    leaders_df.columns = ['userid', 'last reported time', 'distance_traveled']
     #cursor.execute(sql_statement)
     #results = cursor.fetchall()
-    print(leaders_df.head())
+    #print(leaders_df.head())
     return leaders_df
 
 def get_values_by_userid(conn,cursor,userid):
     #sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (userid)
-    sql_statement = """SELECT userid, dt, total_dist FROM leaderboard WHERE userid = '%s'""" % (userid)
+    sql_statement = """SELECT userid, dt, total_dist FROM leaderboard WHERE userid = '%s'""" % (int(userid))
     # n = 33753
     # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
     # cursor.execute(sql_statement)
@@ -73,50 +85,108 @@ def generate_table(leaders_df, max_rows=10):
 
 (conn,cursor) = open_connection_to_db()
 leaders_df = get_leaders_from_db(conn, cursor)
-leaders_df.columns = ['userid', 'last reported time', 'distance_traveled']
-leaders_df.head()
+#leaders_df.head()
 
-
-userid = 33753
+#userid = 33753
+userid = 0
 (results) = get_values_by_userid(conn,cursor,userid)
-print(results)
+#print(results)
+
+(user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,userid)
+#print(user_checkpoint_df.head())
+
+
+
 
 
 #    html.H1(children='RaceCast: Live Race Leaderboard'),
 #app.layout = html.Div(children=[
 app.layout = html.Div([
-    html.H1('RaceCast: Live Race Leaderboard'),
-    generate_table(leaders_df),
-    html.Label('Enter Athlete ID'),
-    dcc.Input(id='user_id_text_box1', value='1', type='text'),
-    dcc.Input(id='user_id_text_box2', value='2', type='text'),
-    html.Div(id='div-display-userid'),
-    dcc.Graph(
+    html.Div(html.H1('RaceCast: Live Race Leaderboard'), style={'textAlign': 'center'}),
+    html.Div(generate_table(leaders_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+    #html.Div(id='div_figure1', style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+    html.Div(id='div_figure1', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),
+
+    html.Div(html.H2('To track progress on an athlete, enter their ID'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+
+    #html.Div(dcc.Input(id='div_user_id_text_box1', value='1', type='text')),
+    html.Div(dcc.Input(id='div_user_id_text_box2', value='1',type='text')),
+    html.Button('Submit', id='submit-val', n_clicks=0),
+    html.Div(id='container-button-basic',children='Enter a value and press submit'),
+    html.Div(id='div_display-userid'),
+    html.Div(id='div_figure2'),
+    #dcc.Graph(id='graph1')
+])
+
+
+#@app.callback(
+#    dash.dependencies.Output('container-button-basic', 'children'),
+#    [dash.dependencies.Input('submit-val', 'n_clicks')],
+#    [dash.dependencies.State('div_user_id_text_box2', 'value')])
+#def update_output(n_clicks, value):
+#    return 'User selected is "{}" '.format(value)
+
+@app.callback(
+    Output('div_display-userid', 'children'),
+    [Input('div_user_id_text_box2',  'value')]
+)
+def update_output_div(input_value):
+    return 'User selected is {}'.format(input_value)
+
+
+
+@app.callback(
+    Output(component_id='div_figure1',component_property='children'),
+    [Input(component_id='div_user_id_text_box2',component_property='value')]    
+)
+def update_graph1(div_user_id_text_box2):
+    leaders_df = get_leaders_from_db(conn, cursor)
+    leaders_ids = leaders_df['userid']
+    n_leaders = len(leaders_ids)
+    for n in range(0, n_leaders, 1):
+        (user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,leaders_ids[n])
+        if   (n == 0):
+            df_temp0 = user_checkpoint_df
+        elif (n == 1):
+            df_temp1 = user_checkpoint_df
+        elif (n == 2):
+            df_temp2 = user_checkpoint_df
+        elif (n == 3):
+            df_temp3 = user_checkpoint_df
+    return dcc.Graph(
         figure=dict(
             data=[
                 dict(
-                    x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-                       2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-                    y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
-                       350, 430, 474, 526, 488, 537, 500, 439],
-                    name='Rest of world',
-                    marker=dict(
-                        color='rgb(55, 83, 109)'
-                    )
-                ),
+                    x=df_temp0['dt'],
+                    y=df_temp0['total_dist'],
+                    name=leaders_ids[0],
+                    marker=dict(color='rgb(55, 83, 109)')),
                 dict(
-                    x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-                       2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-                    y=[16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270,
-                       299, 340, 403, 549, 499],
-                    name='China',
-                    marker=dict(
-                        color='rgb(26, 118, 255)'
-                    )
-                )
+                    x=df_temp1['dt'],
+                    y=df_temp1['total_dist'],
+                    name=leaders_ids[1],
+                    marker=dict(color='rgb(15, 100, 100)')),
+                dict(
+                    x=df_temp2['dt'],
+                    y=df_temp2['total_dist'],
+                    name=leaders_ids[2],
+                    marker=dict(color='rgb(80, 20, 30)')),
+                dict(
+                    x=df_temp3['dt'],
+                    y=df_temp3['total_dist'],
+                    name=leaders_ids[3],
+                    marker=dict(color='rgb(55, 109, 10)')),
             ],
             layout=dict(
-                title='US Export of Plastic Scrap',
+                title='Leaderboard Progress vs Time ',
+                xaxis={'title': 'elapsed time [s]',
+                       'type': 'linear',
+                       'range': [0, 50]
+                      },
+                yaxis={'title': 'distance traveled',
+                       'type': 'linear', 
+                       'range': [0, 50]
+                      },
                 showlegend=True,
                 legend=dict(
                     x=0,
@@ -126,11 +196,54 @@ app.layout = html.Div([
             )
         ),
         style={'height': 300},
-        id='my-graph'
-    ) 
-    
-    #dcc.Graph(id='graph1')
-])
+    )
+
+#@app.callback(
+#    Output(component_id='div_figure2',component_property='children'),
+#    [Input(component_id='div_user_id_text_box',component_property='value')]    
+#)
+
+n_clicks = 10
+@app.callback(
+    dash.dependencies.Output('container-button-basic', 'children'),
+    [dash.dependencies.Input('submit-val', 'n_clicks')],
+    [dash.dependencies.State('div_user_id_text_box2', 'value')])
+def update_graph2(n_clicks, div_user_id_text_box2):
+    (user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,div_user_id_text_box2)
+    print(user_checkpoint_df.head())
+    return dcc.Graph(
+        figure=dict(
+            data=[
+                dict(
+                    x=user_checkpoint_df['dt'],
+                    y=user_checkpoint_df['total_dist'],
+                    name=div_user_id_text_box2,
+                    marker=dict(color='rgb(55, 83, 109)'))
+            ],
+            layout=dict(
+                title='User '+str(div_user_id_text_box2)+' distance vs time   ',
+                xaxis={'title': 'elapsed time [s]',
+                       'type': 'linear',
+                       'range': [0, 50]
+                      },
+                yaxis={'title': 'distance traveled',
+                       'type': 'linear', 
+                       'range': [0, 50]
+                      },
+                #x='x Axis Title',
+                #xaxis=dict('title':'title_text',  range:(0,10,1)),
+                #y='y Axis Title',
+                #yaxis={'range': range(0,10,1)},
+                showlegend=True,
+                legend=dict(x=0,y=1.0),
+                margin=dict(l=40, r=0, t=60, b=60)
+                )    
+            ),
+        style={'height': 400},
+    )
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
 
 
 #app.layout = html.Div([
@@ -138,17 +251,64 @@ app.layout = html.Div([
 
 
 
+# @app.callback(
+#     Output('div_figure1', 'figure'),
+#     [Input('div_user_id_text_box2', 'value')])
+# def update_figure(selected_year):
+#     return {
+
+#         'data': traces,
+#         'layout': dict(
+#             xaxis={'type': 'log', 'title': 'GDP Per Capita',
+#                    'range':[2.3, 4.8]},
+#             yaxis={'title': 'Life Expectancy', 'range': [20, 90]},
+#             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+#             legend={'x': 0, 'y': 1},
+#             hovermode='closest',
+#             transition = {'duration': 500},
+#         )
+        
+        
+
+#         dcc.Graph(
+#             figure=dict(
+#                 data=[
+#                     dict(
+#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
+#                         y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
+#                            350, 430, 474, 526, 488, 537, 500, 439],
+#                         name='Rest of world',
+#                         marker=dict(
+#                             color='rgb(55, 83, 109)'
+#                         )
+#                     ),
+#                     dict(
+#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
+#                         y=[16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270,
+#                            299, 340, 403, 549, 499],
+#                         name='China',
+#                         marker=dict(
+#                             color='rgb(26, 118, 255)'
+#                         )
+#                     )
+#                 ],
+#                 layout=dict(
+#                     title='US Export of Plastic Scrap',
+#                     showlegend=True,
+#                     legend=dict(
+#                         x=0,
+#                         y=1.0
+#                     ),
+#                     margin=dict(l=40, r=0, t=40, b=30)
+#                 )
+#             )
+#             )
+#         }
 
 
-@app.callback(
-    Output('div-display-userid', 'children'),
-    [Input('user_id_text_box2',  'value')]
-)
-def update_output_div(input_value):
-    return 'You\'ve entered "{}"'.format(input_value)
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
 
 
 ######################################

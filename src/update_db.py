@@ -36,9 +36,7 @@ import pandas as pd
 import psycopg2
 import s3fs
 
-#host_name = 'local'
-#host_name = 'master'
-host_name = 'pg'
+
 #batch_num = 0
 batch_num = 1
 #batch_num = 2
@@ -48,6 +46,9 @@ batch_num = 1
 manual_debug = False
 #manual_debug = True
 if (manual_debug):
+    host_name = 'local'
+    #host_name = 'master'
+    #host_name = 'pg'    
     if   (host_name == 'local'):
         base_dir = '/home/craigmatthewsmith'
     elif (host_name == 'pg'):
@@ -65,23 +66,23 @@ else:
 
 def main(file_name_input, drop_and_create_table):
 
-    print('open_connection_to_db ')    
+    print('  open_connection_to_db ')    
     try:
-        connection = psycopg2.connect(database = os.environ['db_name'], 
-                                      host     = os.environ['db_host'], 
-                                      user     = os.environ['db_user_name'], 
-                                      password = os.environ['db_password'], 
-                                      port     = os.environ['db_port'])    
+        conn = psycopg2.connect(database = os.environ['db_name'], 
+                                host     = os.environ['db_host'], 
+                                user     = os.environ['db_user_name'], 
+                                password = os.environ['db_password'], 
+                                port     = os.environ['db_port'])    
         autocommit = True
         if (autocommit):
-            connection.autocommit = True
-        cursor = connection.cursor()
-        print      ('open_connection_to_db success ') 
+            conn.autocommit = True
+        cursor = conn.cursor()
+        print('  open_connection_to_db success ') 
     except:
-        print      ('open_connection_to_db: ERROR ') 
+        print('  open_connection_to_db: ERROR ') 
         
     #drop_and_create_table = False
-    print('drop_and_create_table is %s' %(drop_and_create_table))    
+    print('  drop_and_create_table is %s' %(drop_and_create_table))    
     if (drop_and_create_table):
         sql_statement = """DROP TABLE leaderboard;"""
         cursor.execute(sql_statement)
@@ -95,13 +96,29 @@ def main(file_name_input, drop_and_create_table):
                             );"""
         #print(sql_statement)
         cursor.execute(sql_statement)
-    
-        print('table dropped and created sucessfully ')
+
+        sql_statement = """DROP TABLE checkpoints;"""
+        cursor.execute(sql_statement)
+        # should dt be a primary key as well 
+        sql_statement = """CREATE TABLE checkpoints (
+                           userid       INT,
+                           dt           FLOAT,
+                           lon_last     FLOAT  NOT NULL, 
+                           lat_last     DOUBLE PRECISION  NOT NULL, 
+                           segment_dist FLOAT  NOT NULL,
+                           total_dist FLOAT  NOT NULL,
+                           PRIMARY KEY (userid, dt)
+                           );"""
+        #print(sql_statement)
+        cursor.execute(sql_statement)    
+        print('  tables dropped and created sucessfully ')
         
     #delete_all_entries_from_table = True
     delete_all_entries_from_table = False
     if (delete_all_entries_from_table):
         sql_statement = """DELETE FROM leaderboard;"""
+        cursor.execute(sql_statement)
+        sql_statement = """DELETE FROM checkpoints;"""
         cursor.execute(sql_statement)
         
     #batch_num = 0
@@ -112,22 +129,22 @@ def main(file_name_input, drop_and_create_table):
     
     #file_name_input  = os.path.join(work_dir, 'data', 'gps_batch_'+str(batch_num)+'.csv')
     #file_name_input  = 's3a://gps-data-processed/gps_batch_' +str(batch_num)+'.csv'        
-    print('using input file %s ' %(file_name_input))
+    print('  using input file %s ' %(file_name_input))
     if not (file_name_input.startswith('s3')):
         if not (os.path.isfile(file_name_input)):
-            print('ERROR - missing input file')
-            sys.exit('ERROR - missing input file')
+            print('  ERROR - missing input file')
+            sys.exit('  ERROR - missing input file')
 
-    print('reading input file')
+    print('  reading input file')
     batch_df = pd.read_csv(file_name_input,index_col=0)
     #print(batch_df.head())
     # stn_read_df_matrix = stn_read_csv.as_matrix()
     # list(batch_df)
-    total_dist = np.sqrt(batch_df['lon_last']**2.0 + batch_df['lat_last']**2.0)
+    segment_dist = np.sqrt(batch_df['sum_lon_diff']**2.0 + batch_df['sum_lat_diff']**2.0)
  
     time_end = time.time()
     process_dt = (time_end - time_start)/60.0
-    print ('read_data took %5.2f minutes ' %(process_dt))
+    print ('  read_data took %5.2f minutes ' %(process_dt))
     
     time_start = time.time()
     
@@ -136,22 +153,27 @@ def main(file_name_input, drop_and_create_table):
     #for n in range(0, 1, 1):    
     for n in range(0, n_ids, 1):    
         if (n%1000 ==0 ):
-            print('  processing user %5.0f of %5.0f ' %(n, n_ids))
+            print('    processing user %5.0f of %5.0f ' %(n, n_ids))
         sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (int(batch_df['id'][n]))
         cursor.execute(sql_statement)
         results = cursor.fetchall()
+        #print(results)
         if   (len(results) == 0):
-            total_dist_new = total_dist[n]
+            total_dist_new = segment_dist[n]
+            total_segment_dist = segment_dist[n]
             #print('    no entries found')
         elif (len(results) > 0):
             #print(results)
             [userid_prev, dt_prev, lon_last_prev, lat_last_prev, total_dist_prev] = results[0]
-            print('    found user %s dt %5.1f lon %5.1f lat %5.1f  dist %5.1f ' %(userid_prev, dt_prev, lon_last_prev, lat_last_prev, total_dist_prev))
+            if (batch_df['id'][n] == 1):
+                print('    found user %s dt %5.1f lon %5.1f lat %5.1f  dist %5.1f ' %(userid_prev, dt_prev, lon_last_prev, lat_last_prev, total_dist_prev))
             lon_diff = np.abs(batch_df['lon_first'][n] - lon_last_prev)
             lat_diff = np.abs(batch_df['lat_first'][n] - lat_last_prev)
-            total_dist_inc = np.sqrt(lon_diff**2.0 + lat_diff**2.0)
-            total_dist_new = total_dist_prev + total_dist[n] + total_dist_inc
-            print('    total_dist new %5.2f, prev %5.2f, current %5.2f, inc %5.2f ' %(total_dist_new, total_dist_prev, total_dist[n], total_dist_inc))
+            dist_inc = np.sqrt(lon_diff**2.0 + lat_diff**2.0)
+            total_dist_new = total_dist_prev + segment_dist[n] + dist_inc
+            total_segment_dist = segment_dist[n] + dist_inc
+            if (batch_df['id'][n] == 1):
+                print('    total_dist new %5.2f, prev %5.2f, current %5.2f, inc %5.2f ' %(total_dist_new, total_dist_prev, segment_dist[n], dist_inc))
             
         # no update
         #sql_statement = """INSERT INTO leaderboard
@@ -168,12 +190,26 @@ def main(file_name_input, drop_and_create_table):
             +""" ON CONFLICT(userid) DO UPDATE SET 
             (dt, lon_last, lat_last, total_dist) = 
             (EXCLUDED.dt, EXCLUDED.lon_last, EXCLUDED.lat_last, EXCLUDED.total_dist)""")
+
+        if not (drop_and_create_table):
+            sql_statement = """SELECT userid, dt, lon_last, lat_last, segment_dist, total_dist FROM checkpoints WHERE userid = '%s'""" % (int(batch_df['id'][n]))
+            user_checkpoint_df = pd.read_sql(sql_statement,conn)
+            #print(user_checkpoint_df.head())
+            #user_last_checkpoint = user_checkpoint_df.iloc[0]['userid']
+            if (batch_df['id'][n] == 1):
+                print('    found checkpoint user %s dt %5.1f lon %5.1f lat %5.1f segment_dist %5.1f total_dist %5.1f ' %(user_checkpoint_df.iloc[-1]['userid'], user_checkpoint_df.iloc[-1]['dt'], user_checkpoint_df.iloc[-1]['lon_last'], user_checkpoint_df.iloc[-1]['lat_last'], user_checkpoint_df.iloc[-1]['segment_dist'], user_checkpoint_df.iloc[-1]['total_dist']))
+
+        cursor.execute("""INSERT INTO checkpoints 
+            (userid, dt, lon_last, lat_last, segment_dist, total_dist) 
+            VALUES( %s, %s, %s, %s, %s, %s)""" \
+            % (int(batch_df['id'][n]), batch_df['dt_last'][n], batch_df['lon_last'][n], batch_df['lat_last'][n], total_segment_dist, total_dist_new))
  
-    print('data successfully inserted to db ')
+    print('  data successfully inserted to db ')
     time_end = time.time()
     process_dt = (time_end - time_start)/60.0
-    print ('insert data took %5.2f minutes ' %(process_dt))
-        
+    print ('  insert data took %5.2f minutes ' %(process_dt))
+    conn.close()    
+    print('  connection closed ')
 
 if __name__ == "__main__":
     if (len(sys.argv) != 3):
@@ -182,7 +218,8 @@ if __name__ == "__main__":
     else:
         file_name_input = sys.argv[1]        
         start_or_update = sys.argv[2]        
-        print('start_or_update is %s' %(start_or_update))
+        print('starting new update with input file %s' %(file_name_input))
+        print('  start_or_update is %s' %(start_or_update))
         if   (start_or_update == 'start'):
             drop_and_create_table = True
         elif (start_or_update == 'update'):
@@ -190,25 +227,12 @@ if __name__ == "__main__":
         else:
             print('ERROR - only start or update accepted as cli')
             sys.exit()
-        print('drop_and_create_table is %s' %(drop_and_create_table))
-        print('calling main before ')
+        print('  drop_and_create_table is %s' %(drop_and_create_table))
+        print('  calling main before ')
         main(file_name_input, drop_and_create_table)
         print('script executed succesfully ')
 
 
-# cursor.execute("""SELECT datetime_valid, u_ws, v_ws FROM wrf 
-#                WHERE stn_id='%s' AND 
-#                hgt='%s' AND 
-#                domain=3 AND 
-#                ensemble_member='acm2_px' AND 
-#                datetime_init = '%s' AND 
-#                datetime_valid >= '%s' AND 
-#                datetime_valid <= '%s'""" 
-#                % (stn_id[s], 
-#                   dict_post_process_options['extract_profile_hgts'][h], 
-#                   datetime_init, 
-#                   datetime_start_temp, 
-#                   datetime_end_temp))
 
 #cursor.execute(sql_statement)
 #results = cursor.fetchall()
