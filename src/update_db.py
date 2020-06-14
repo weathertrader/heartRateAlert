@@ -63,7 +63,6 @@ else:
 #print(os.environ.get('db_name'))
 #print(os.environ['db_name'])
 
-
 def main(file_name_input, drop_and_create_table):
 
     print('  open_connection_to_db ')    
@@ -183,6 +182,8 @@ def main(file_name_input, drop_and_create_table):
         # with update
         # cursor.execute(sql_statement)
         # UPDATE table_name SET column1 = value1, column2 = value2, ... WHERE condition;
+        # UPDATE vs ON CONFLICT example here under 'weather'
+        # https://www.postgresql.org/docs/12/sql-update.html
         cursor.execute("""INSERT INTO leaderboard 
             (userid, dt, lon_last, lat_last, total_dist) 
             VALUES( %s, %s, %s, %s, %s)""" \
