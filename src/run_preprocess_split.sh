@@ -3,7 +3,7 @@
 
 echo $PWD
 echo "split files begin"
-split -l 1000 data/endomondoHR_proper.json
+split -l 10000 data/endomondoHR_proper.json
 
 i = 0
 echo "split files done"

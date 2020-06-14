@@ -40,32 +40,27 @@ Since the data file contains more activities than Spark can handle, we will spli
 ```
 src/run_preprocess_split.sh
 ```
-then upload all of the data files to s3 since we will process them there
+then upload all of the data files and our processing scripts to a remote server on ec2 since we will process them there
 ```
-aws s3 cp data/ s3://gps-data-processed/ --recursive
-```
-
-
-Process the data by exectuting the following `bash` script, which in turn will 
-call a python script over all of the input files with command line arguments as the input and output data file
+# aws s3 cp data/ s3://gps-data-processed/ --recursive
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/data_preprocess.py ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/run_preprocess.sh ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_subset_by_activity_*.txt ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 
 ```
-./src/preprocess.bsh
-
-python src/data_preprocess.py data/gps_tracks_0.txt data/gps_tracks_processed_0.csv
-etc ...
+and order the activities by time by running the following 
+```
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+cd raceCast
+src/run_preprocess.sh
+```
+which will write the gps data ordered by timestamp to s3.  If you wish to verify the timestamp ordering 
+you can do so with the following on a locally hosted file 
+```
+head -n 5 gps_stream_total_activities_001_dt_*.csv
+tail -n 5 gps_stream_total_activities_001_dt_*.csv
 ```
 
-At this point the data is ordered by timestamp and you can verify with the following command from the cli 
-```
-head -n 30 gps_tracks_processed_0.csv
-```
-
-Now upload these files to S3 using the following command from the cli
-
-```
-aws sync command 
-```
 
 
 ## S3 storage setup

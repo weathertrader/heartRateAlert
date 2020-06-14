@@ -1,29 +1,18 @@
 # data_preprocess.py 
 # reads in raw gps data and write a csv ordered by timestamp 
 # usage: 
-# python src/data_preprocess.py 2
-# python preprocess/data_preprocess.py data/endomondoHR_proper.json processed_data.csv
-# python preprocess/data_preprocess.py data/gps_tracks_0.txt gps_tracks_processed_0.csv
+# python src/data_preprocess.py 1
 
 import os
 import ast
-#import json
-#import datetime as dt
-from datetime import datetime as dt
-import random
 import pandas as pd
 import numpy as np
 import sys
-#import csv
 import time
-
-# debugging 
-#input_file = 'data/endomondoHR_proper.json'
-#input_file = 'data/data_subset_proper.json'
-# input_file = 'data/gps_tracks_0.txt'
-#output_file = 'processed_data_0.csv'
-#dir_work = '/home/craigmatthewsmith/heartRateAlert'
-#os.chdir(dir_work)
+#import json
+#import datetime as dt
+#from datetime import datetime as dt
+#import random
 
 manual_debug = False
 #manual_debug = True
@@ -31,6 +20,8 @@ manual_debug = False
 #    base_dir = '/home/craigmatthewsmith'
 #    work_dir = os.path.join(base_dir, 'raceCast')
 #    os.chdir(work_dir)
+# input_file = 'data/gps_tracks_0.txt'
+#output_file = 'processed_data_0.csv'
 #else:
 #    work_dir = os.getcwd()
 
@@ -39,52 +30,39 @@ def preprocess_inputs(n_files):
     
     print('file read begin ')
 
-    #file_name_data = os.path.join(dir_data, 'data_subset_proper.json')
-    #os.path.isfile(file_name_data)
-    #data = []
-    #with open(input_file) as file_open:
-    #    for line in file_open:
-    #        data.append(eval(l))
-            
-    # add random noise to start of tracks
-    #dt_offset_scaling  = 10.0
-    #lon_offset_scaling = 1.0
-    #lat_offset_scaling = 1.0
 
-    n_records = 500
-    #n_activities = 168000
+    n_records_per_activity = 500
+    #n_activities_per_file = 168000
     # 83892000
     # chokes 
-    n_activities = 20000
+    n_activities_per_file = 20000
     
-    #n_subset = int(168000/n_activities)+1
+    #n_subset = int(168000/n_activities_per_file)+1
 
     #subset = 5
     #for subset in range(4, n_subset, 1):
-    #start_count = subset*n_activities
-    #end_count = start_count + n_activities
+    #start_count = subset*n_activities_per_file
+    #end_count = start_count + n_activities_per_file
     #print ('  subset %6.0f of %6.0f, start_count %6.0f, end_count %6.0f ' %(subset, n_subset, start_count, end_count))
  
-    #data_all   = np.full([n_activities*n_records,4], np.nan, dtype=float)
+    #data_all   = np.full([n_activities_per_file*n_records_per_activity,4], np.nan, dtype=float)
 
     # dt_max is 17985.0 or 5.0 hours, should dt_all = dt_all/10.0, would need to cast to float
 
     max_records_per_batch = 40000000 # 24,000,000
-    #                       10,000,000
 
-    n_batch = 20
+    n_batch = 20 # batch 1 min for 20 minutes
     dt_max_expected = 20000.0
     dt_int = dt_max_expected/n_batch
     n = 1
-    #for n in range(0, 4, 1):
-    for n in range(0, n_batch, 1):
+    #for n in range(0, n_batch, 1):
+    for n in range(0, 4, 1):
         count_all = 0
         [dt_min_n, dt_max_n] = [n*dt_int, (n+1)*dt_int]
         print('  processing n %s of %s, dt %s - %s ' %(n, n_batch, dt_min_n, dt_max_n))
 
-        #output_file = 'data/gps_tracks_stream_minute_'+str(n)+'.csv'    
-        #output_file = 's3a://gps-data-processed/gps_stream_minute_'+str(n)+'_'+str(n_files)+'.csv'
-        output_file = 's3a://gps-data-processed/gps_stream_dt_'+str(n).rjust(2,'0')+'_f_'+str(n_files).rjust(2,'0')+'.csv'
+        #output_file = 'data/gps_stream_total_activities_'+str(n_files).rjust(3,'0')+'_dt_'+str(n).rjust(2,'0')+'.csv'
+        output_file = 's3a://gps-data-processed/gps_stream_total_activities_'+str(n_files).rjust(3,'0')+'_dt_'+str(n).rjust(2,'0')+'.csv'
         print('  output_file is %s ' %(output_file))        
 
         lon_all = np.full([max_records_per_batch], np.nan, dtype=float)
@@ -95,20 +73,20 @@ def preprocess_inputs(n_files):
         
         #for f in range(0, 2, 1):
         for f in range(0, n_files, 1):
-            input_file  = 'data/gps_tracks_'+str(f)+'.txt'
-            #input_file  = 's3a://gps-data-processed/gps_tracks_'+str(f)+'.txt'
-            id_start = n_activities*f
+            input_file  = 'data/gps_tracks_subset_by_activity_'+str(f+1).rjust(3,'0')+'.txt'
+            #input_file  = 's3a://gps-data-processed/gps_tracks_subset_by_activity_'+str(f).rjust(3,'0')+'.txt'
+            id_start = n_activities_per_file*f
             print('    processing f %s of %s, id_start %s, %s ' %(f, n_files, id_start, input_file))        
             time_start = time.time()
             print('      read data begin ')
         
-            lon_file = np.full([n_activities*n_records], np.nan, dtype=float)
-            lat_file = np.full([n_activities*n_records], np.nan, dtype=float)
-            #dt_file  = np.full([n_activities*n_records], 0, dtype=int)
-            dt_file  = np.full([n_activities*n_records], dt_min_n-1, dtype=int)
-            #id_file  = np.full([n_activities*n_records], 0, dtype=int)
-            id_file  = np.full([n_activities*n_records], id_start, dtype=int)
-            hr_file  = np.full([n_activities*n_records], 0, dtype=int)
+            lon_file = np.full([n_activities_per_file*n_records_per_activity], np.nan, dtype=float)
+            lat_file = np.full([n_activities_per_file*n_records_per_activity], np.nan, dtype=float)
+            #dt_file  = np.full([n_activities_per_file*n_records_per_activity], 0, dtype=int)
+            dt_file  = np.full([n_activities_per_file*n_records_per_activity], dt_min_n-1, dtype=int)
+            #id_file  = np.full([n_activities_per_file*n_records_per_activity], 0, dtype=int)
+            id_file  = np.full([n_activities_per_file*n_records_per_activity], id_start, dtype=int)
+            hr_file  = np.full([n_activities_per_file*n_records_per_activity], 0, dtype=int)
 
             line_count = 0
             count_file = 0
@@ -120,36 +98,17 @@ def preprocess_inputs(n_files):
                 for line in file_open:
                     #if (line_count%100 == 0):
                     #    print ('      line_count %6.0f start_count %6.0f end_count %6.0f ' %(line_count, start_count, end_count))
-                    #    #print ('     line_count %6.0f with %3.0f n_records and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(line_count, n_records, dt_offset_temp, lon_offset_temp, lat_offset_temp))
-                    #if (line_count < start_count):
-                    #    next(file_open)
-                    #if (line_count < n_activities):
-                    #elif (line_count >= start_count and line_count < end_count):
-                    # can skip lines using 
-                    #next(f)
-                    #dt_offset_temp = int(dt_offset_scaling*random.random())
-                    #dt_offset_temp = float(dt_offset_scaling*random.random())
-                    #lon_offset_temp = lon_offset_scaling*(random.random()-1.0)
-                    #lat_offset_temp = lat_offset_scaling*(random.random()-1.0)
-                    #file_line_temp = "{'longitude': [24.64977040886879, 24.65014273300767,  24.368406180292368, 24.6496663056314], 'altitude': [41.6, 40.6, 40.6, 38.4], 'latitude': [60.173348765820265, 60.173239801079035, 60.17298021353781, 60.17335429787636], 'sport': 'bike', 'id': 396826535, 'heart_rate': [100, 111, 120, 119], 'gender': 'male', 'timestamp': [1408898746, 1408898754, 1408898765, 1408898778], 'url': 'https://www.endomondo.com/users/10921915/workouts/396826535','userId': 10921915, 'speed': [6.8652, 16.4736, 19.1988, 20.4804]}"        
-                    #line_strip = file_line_temp.replace(':','').replace('{','').replace('}','')
-                    #line_strip = file_lines[f].replace(':','').replace('{','').replace('}','')        
+                    #    #print ('     line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
                     line_strip = line.replace(':','').replace('{','').replace('}','')        
                     lon_temp = np.array(ast.literal_eval(line_strip.split('longitude')[1].split('altitude')[0].replace('],',']').replace("' ",'').replace("] '",']')))
                     lat_temp = np.array(ast.literal_eval(line_strip.split('latitude')[1].split('sport')[0].replace('],',']').replace("' ",'').replace("] '",']')))
                     dt_temp  = np.array(ast.literal_eval(line_strip.split('timestamp')[1].split('url')[0].replace('],',']').replace("' ",'').replace("] '",']')))
                     hr_temp  = np.array(ast.literal_eval(line_strip.split('heart_rate')[1].split('gender')[0].replace('],',']').replace("' ",'').replace("] '",']')))
         
-                    #lon_temp = np.array(lon_temp)
-                    #lat_temp = np.array(lat_temp) 
-                    #dt_temp  = np.array( dt_temp) 
                     lon_temp = lon_temp - lon_temp[0]
                     lat_temp = lat_temp - lat_temp[0] 
                     dt_temp  =  dt_temp -  dt_temp[0] 
-                    #lon_temp = lon_temp + lon_offset_temp
-                    #lat_temp = lat_temp + lat_offset_temp
-                    #dt_temp  =  dt_temp +  dt_offset_temp
-        
+
                     #dt_max_temp = np.nanmax(dt_temp)
                     #if (dt_min_temp < dt_min):
                     #    print('dt min max first last is %5.2f, %5.2f, %5.2f, %5.2f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
@@ -163,19 +122,20 @@ def preprocess_inputs(n_files):
                     #    print('    dt min max first last is %8.0f, %8.0f, %8.0f, %8.0f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
                     #else: 
                     if ((dt_min_temp >= 0) and (dt_max_temp < 28800.0)):
-                        #n_records = len(lon_temp)
-                        #n_records = 10
+                        #n_records_per_activity = len(lon_temp)
+                        #n_records_per_activity = 10
                         print_progress = False
+                        #print_progress = True
                         if (print_progress):
                             if (line_count%1000 == 0):
-                                #print ('    count %6.0f line_count %6.0f with %3.0f n_records and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(count, line_count, n_records, dt_offset_temp, lon_offset_temp, lat_offset_temp))
+                                #print ('    count %6.0f line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(count, line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
                                 print ('      count %6.0f dt min max is %6.0f %6.0f ' %(line_count, dt_temp[0], dt_temp[-1]))
             
-                        id_file [(line_count*n_records):(line_count*n_records+n_records)] = id_start + line_count+1
-                        dt_file [(line_count*n_records):(line_count*n_records+n_records)] =  dt_temp
-                        lon_file[(line_count*n_records):(line_count*n_records+n_records)] = lon_temp
-                        lat_file[(line_count*n_records):(line_count*n_records+n_records)] = lat_temp
-                        hr_file [(line_count*n_records):(line_count*n_records+n_records)] = hr_temp
+                        id_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = id_start + line_count+1
+                        dt_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] =  dt_temp
+                        lon_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lon_temp
+                        lat_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lat_temp
+                        hr_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = hr_temp
                         line_count += 1
 
             time_end = time.time()
@@ -302,10 +262,6 @@ if __name__ == '__main__':
 # f = 6 
 # for f in range(0, n_lines, 1): 
 #     line = file_lines[f]
-#     dt_offset_temp = int(dt_offset_scaling*random.random())
-#     lon_offset_temp = lon_offset_scaling*(random.random()-1.0)
-#     lat_offset_temp = lat_offset_scaling*(random.random()-1.0)
-
 #     line_strip = line.replace(':','').replace('{','').replace('}','')        
 #     lon_temp = np.array(ast.literal_eval(line_strip.split('longitude')[1].split('altitude')[0].replace('],',']').replace("' ",'').replace("] '",']')))
 #     lat_temp = np.array(ast.literal_eval(line_strip.split('latitude')[1].split('sport')[0].replace('],',']').replace("' ",'').replace("] '",']')))
@@ -319,12 +275,10 @@ if __name__ == '__main__':
 #     lat_temp = lat_temp + lat_offset_temp
 #     dt_temp  =  dt_temp +  dt_offset_temp
 
-
 # input_file_open.close()
 # time_end = time.time()
 # process_dt = (time_end - time_start)/60.0
 # print ('read    data took %5.2f minutes ' %(process_dt))
-
 
 # {'longitude': [24.64977040886879, 24.65014273300767,  24.368406180292368, 24.6496663056314], 
 # 'altitude': [41.6, 40.6, 40.6, 38.4], 
