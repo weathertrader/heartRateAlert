@@ -2,15 +2,22 @@
 #
 source ~/.bashrc
 source ~/.profile
-sleep_interval=5
+sleep_interval=2
 #echo $sleep_interval
 
 /home/craigmatthewsmith/anaconda3/envs/pg_env/bin/python src/create_db.py
 
 # 0 start 
 spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py data/gps_stream_total_activities_001_dt_00.csv data/gps_batch_total_activities_001_dt_00.csv start
+sleep $sleep_interval
 # 1 update 
 spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py data/gps_stream_total_activities_001_dt_01.csv data/gps_batch_total_activities_001_dt_01.csv update
+sleep $sleep_interval
+# 2 update 
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py data/gps_stream_total_activities_001_dt_02.csv data/gps_batch_total_activities_001_dt_02.csv update
+sleep $sleep_interval
+
+
 
 # no hardcode full path - try to avoid
 #spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py data/gps_stream_total_activities_001_dt_00.csv data/gps_batch_total_activities_001_dt_00.csv start

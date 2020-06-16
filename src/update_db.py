@@ -25,19 +25,48 @@ cursor = conn.cursor()
 print('  open_connection_to_db success ') 
 
 
-sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard """
-leaderboard_df = pd.read_sql(sql_statement,conn)
-leaderboard_df.head(10)
 
-
-sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints"""
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid"""
 checkpoints_df = pd.read_sql(sql_statement,conn)
 checkpoints_df.head(20)
 
 
+# grab the last value of checkpoints only 
+    
+sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+    FROM checkpoints \
+    ORDER BY userid,total_dist DESC""" 
+checkpoints_last_df = pd.read_sql(sql_statement,conn)
+checkpoints_last_df.head(20)
+
+
+sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+    FROM checkpoints \
+    ORDER BY userid DESC""" 
+checkpoints_last_df = pd.read_sql(sql_statement,conn)
+checkpoints_last_df.head(20)
 
 
 
+   
+select distinct on (id) id, date, another_info
+from the_table
+order by id, date desc;    
+
+
+# choose most recent data only 
+SELECT timestamp, value, card 
+FROM my_table 
+ORDER BY timestamp DESC 
+LIMIT 1
+
+
+
+
+
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard """
+leaderboard_df = pd.read_sql(sql_statement,conn)
+leaderboard_df.head(10)
 
 
 

@@ -50,12 +50,24 @@ else:
 #print(os.environ.get('db_name'))
 #print(os.environ['db_name'])
 
+
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.postgresql:postgresql:42.2.14 pyspark-shell'
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--driver-class-path /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar'
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar pyspark-shell'
 
-#show_tables = True
-show_tables = False
+
+show_tables = True
+#show_tables = False
+
+def read_leaderboard(spark, url, properties):
+
+    leaderboard_old_df = spark.read.jdbc(url=url, table='leaderboard', properties=properties)
+    # n = 1
+    #sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = 1"""
+    #leaderboard_old_df2 = spark.read.format("jdbc").option("url", url).option("user", os.environ['db_user_name']).option("password",os.environ['db_password']).option("driver", "org.postgresql.Driver").option("query", sql_statement).load()
+    #leaderboard_old_df2.show()
+
+    return leaderboard_old_df    
 
 def read_checkpoints(spark, url, properties):
     # this should read only  most recent values in checkpoints or
@@ -85,6 +97,7 @@ def read_checkpoints(spark, url, properties):
     #     .option("query", query)\
     #     .load()
 
+
 def read_checkpoints_most_recent(spark, url, properties, db_user_name, db_password):
 
     #sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
@@ -106,6 +119,7 @@ def read_checkpoints_most_recent(spark, url, properties, db_user_name, db_passwo
     #checkpoints_most_recent_df.show()
     return checkpoints_most_recent_df
 
+    
 def update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, start_or_update):
     # may need to append .save()
     if   (start_or_update == 'start'):
@@ -122,6 +136,46 @@ def update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, star
         #mode = 'overwrite'    
         #checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
  
+    
+def update_leaderboard_table(leaderboard_new_to_insert_df, url, properties, start_or_update, db_user_name, db_password):
+    if (start_or_update == 'update'):    
+        print('delete_from_leaderboard_table begin')
+        temp_command = '/home/craigmatthewsmith/anaconda3/envs/pg_env/bin/python src/delete_from_leaderboard.py'
+        print ('temp_command is %s' %(temp_command))
+        print('delete_from_leaderboard_table end')
+        time.sleep(10)
+        os.system(temp_command)
+
+    # if  (start_or_update == 'start'):
+    print('update_leaderboard_table start')
+    mode = 'overwrite'
+    leaderboard_new_to_insert_df.write.jdbc(url=url, table='leaderboard', mode=mode, properties=properties)
+    #elif (start_or_update == 'update'):
+        
+    #print('update_leaderboard_table begin')
+    # no
+    #mode = 'overwrite'
+    # no
+    #mode = 'append'
+    # no - 'ignore', 'error', 'errorifexists'
+    #leaderboard_new_to_insert_df.write.jdbc(url=url, table='leaderboard', mode=mode, properties=properties)
+    # no
+    #leaderboard_new_to_insert_df.write.option("truncate", "true").jdbc(url=url, table='leaderboard', mode='overwrite', properties=properties)
+    #can try this next  
+    #alternative write syntax 
+    #leaderboard_new_to_insert_df.write \
+    #    .format("jdbc") \
+    #    .mode('overwrite')\
+    #    .option("url", url) \
+    #    .option("dbtable", 'leaderboard') \
+    #    .option("user", db_user_name) \
+    #    .option("driver", "org.postgresql.Driver")\
+    #    .option("password", db_password)\
+    #    .save()
+    #    # .option("driver", "org.postgresql.Driver").save()
+    
+
+    
 def main(file_name_input, file_name_output, start_or_update):
     
     time_start_all  = time.time()
@@ -306,7 +360,21 @@ def main(file_name_input, file_name_output, start_or_update):
             checkpoints_most_recent_df.show()
     time_end = time.time()
     process_dt_read_checkpoints_most_recent = (time_end - time_start)/60.0    
-            
+    
+    #############################################
+    # read leaderboard from db
+    #time_start = time.time()
+    #if (start_or_update == 'update'):
+    #    print('read_leaderboard begin')
+    #    (leaderboard_old_df) = read_leaderboard(spark, url, properties)
+    #    print('read_leaderboard end')
+    #    leaderboard_old_df.createOrReplaceTempView("table_leaderboard_old")
+    #    if (show_tables):
+    #        print ('showing leaderboard_old')
+    #        leaderboard_old_df.show()
+    #time_end = time.time()
+    #process_dt_read_old_leaderboard = (time_end - time_start)/60.0    
+        
     #############################################
     # insert checkpoints table with new data 
     time_start = time.time()
@@ -317,6 +385,19 @@ def main(file_name_input, file_name_output, start_or_update):
             SELECT userid, dt_last, lon_last, lat_last, segment_dist, segment_dist AS total_dist \
             FROM table_checkpoints_new""")
     elif (start_or_update == 'update'):
+        #checkpoints_new_to_insert_df = spark.sql(""" \
+        #    SELECT \
+        #    	table_checkpoints_new.userid, \
+        #    	table_checkpoints_new.dt_last, \
+        #    	table_checkpoints_new.lon_last, \
+        #    	table_checkpoints_new.lat_last, \
+        #    	table_checkpoints_new.segment_dist, \
+        #    	table_checkpoints_new.segment_dist + table_leaderboard_old.total_dist AS total_dist \
+        #    FROM \
+        #    	table_checkpoints_new \
+        #    INNER JOIN table_leaderboard_old ON table_leaderboard_old.userid = table_checkpoints_new.userid \
+        #    ORDER BY table_checkpoints_new.userid""")
+
         checkpoints_new_to_insert_df = spark.sql(""" \
             SELECT \
             	table_checkpoints_new.userid, \
@@ -342,6 +423,37 @@ def main(file_name_input, file_name_output, start_or_update):
     process_dt_update_checkpoints = (time_end - time_start)/60.0    
         
     #############################################
+    # update leaderboard aggregate table 
+    time_start = time.time()
+    # if   (start_or_update == 'start'):
+    #     # leaderboards first time
+    #     leaderboard_new_to_insert_df = spark.sql("""
+    #         SELECT userid, dt_last, lon_last, lat_last, segment_dist AS total_dist \
+    #         FROM table_checkpoints_new""")
+    # elif (start_or_update == 'update'):       
+    #     leaderboard_new_to_insert_df = spark.sql(""" \
+    #         SELECT \
+    #         	table_checkpoints_new.userid, \
+    #         	table_checkpoints_new.dt_last, \
+    #         	table_checkpoints_new.lon_last, \
+    #         	table_checkpoints_new.lat_last, \
+    #         	table_checkpoints_new.segment_dist + table_leaderboard_old.total_dist AS total_dist \
+    #         FROM \
+    #         	table_checkpoints_new \
+    #         INNER JOIN table_leaderboard_old ON table_leaderboard_old.userid = table_checkpoints_new.userid \
+    #         ORDER BY table_checkpoints_new.userid""")                                    
+    #if (show_tables):
+    #    print ('showing leaderboard_new_to_insert_df')
+    #    leaderboard_new_to_insert_df.show()
+    #print('update_leaderboard_table begin')
+    #update_leaderboard_table(leaderboard_new_to_insert_df, url, properties, start_or_update, os.environ['db_user_name'], os.environ['db_password'])
+    #print('update_leaderboard_table end')
+
+    time_end = time.time()
+    process_dt_update_leaderboard = (time_end - time_start)/60.0    
+
+
+    #############################################
     # write to csv 
     time_start = time.time()        
 
@@ -357,15 +469,17 @@ def main(file_name_input, file_name_output, start_or_update):
     process_dt_all = (time_end_all - time_start_all)/60.0    
 
     # print timing to console 
-    print (f'csv_read                took {process_dt_csv_read :6.2f} minutes ')
-    print (f'process_new             took {process_dt_process_new_checkpoints  :6.2f} minutes ')
-    print (f'read_old_checkpoints    took {process_dt_read_old_checkpoints:6.2f} minutes ')
-    print (f'read_checkpoints_recent took {process_dt_read_checkpoints_most_recent:6.2f} minutes ')
-    print (f'update_checkpoints      took {process_dt_update_checkpoints:6.2f} minutes ')
-    print (f'write                   took {process_dt_write_csv:6.2f} minutes ')
-    print (f'all                     took {process_dt_all      :6.2f} minutes ')
+    print (f'csv_read             took {process_dt_csv_read :6.2f} minutes ')
+    print (f'process_new          took {process_dt_process_new_checkpoints  :6.2f} minutes ')
+    print (f'read_old_checkpoints took {process_dt_read_old_checkpoints:6.2f} minutes ')
+    #print (f'read_old_leaderboard took {process_dt_read_old_leaderboard:6.2f} minutes ')
+    print (f'update_leaderboard   took {process_dt_update_leaderboard:6.2f} minutes ')
+    print (f'update_checkpoints   took {process_dt_update_checkpoints:6.2f} minutes ')
+    print (f'write                took {process_dt_write_csv:6.2f} minutes ')
+    print (f'all                  took {process_dt_all      :6.2f} minutes ')
     spark.stop()
       
+
 if __name__ == "__main__":
     if (len(sys.argv) != 4):
         print("Usage: python3 batch_process_gps.py file_name_input file_name_output start_or_update", file=sys.stderr)
