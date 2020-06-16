@@ -1,3 +1,79 @@
+
+
+
+# query the pg data 
+import os
+import sys
+import numpy as np
+#from operator import add
+#from functools import reduce
+#import csv
+import time
+import pandas as pd
+import psycopg2
+import s3fs
+
+conn = psycopg2.connect(database = os.environ['db_name'], 
+                        host     = os.environ['db_host'], 
+                        user     = os.environ['db_user_name'], 
+                        password = os.environ['db_password'], 
+                        port     = os.environ['db_port'])    
+autocommit = True
+if (autocommit):
+    conn.autocommit = True
+cursor = conn.cursor()
+print('  open_connection_to_db success ') 
+
+
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard """
+leaderboard_df = pd.read_sql(sql_statement,conn)
+leaderboard_df.head(10)
+
+
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints"""
+checkpoints_df = pd.read_sql(sql_statement,conn)
+checkpoints_df.head(20)
+
+
+
+
+
+
+
+
+
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '1'""" 
+leaderboard_df = pd.read_sql(sql_statement,conn)
+leaderboard_df.head()
+
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints WHERE userid = '1'"""
+checkpoints_df = pd.read_sql(sql_statement,conn)
+checkpoints_df.head()
+
+
+sql_statement = """
+    SELECT
+    	leaderboard.userid,
+    	leaderboard.dt_last,
+    	checkpoints.lon_last,
+    	checkpoints.lat_last,
+    	leaderboard.total_dist + checkpoints.segment_dist AS new_dist
+    FROM
+    	leaderboard
+    INNER JOIN checkpoints ON leaderboard.userid = checkpoints.userid;"""
+
+temp1_df = pd.read_sql(sql_statement,conn)
+temp1_df.head()
+
+
+
+
+
+
+
+
+
+
 # update_db.py 
 # purpose - update tables with latest batch results
 # usage - python3 src/update_db.py data/gps_batch_0.csv start
@@ -166,7 +242,7 @@ def main(file_name_input, drop_and_create_table):
             (userid, dt, lon_last, lat_last, segment_dist, total_dist) 
             VALUES( %s, %s, %s, %s, %s, %s)""" \
             % (int(batch_df['id'][n]), batch_df['dt_last'][n], batch_df['lon_last'][n], batch_df['lat_last'][n], total_segment_dist, total_dist_new))
- 
+     
     print('  data successfully inserted to db ')
     time_end = time.time()
     process_dt = (time_end - time_start)/60.0

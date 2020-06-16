@@ -56,34 +56,35 @@ else:
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar pyspark-shell'
 
 
+show_tables = True
+#show_tables = False
+
 def read_leaderboard(spark, url, properties):
-    print('read_leaderboard begin')
 
     leaderboard_old_df = spark.read.jdbc(url=url, table='leaderboard', properties=properties)
-    leaderboard_old_df.show()
     # n = 1
     #sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = 1"""
     #leaderboard_old_df2 = spark.read.format("jdbc").option("url", url).option("user", os.environ['db_user_name']).option("password",os.environ['db_password']).option("driver", "org.postgresql.Driver").option("query", sql_statement).load()
     #leaderboard_old_df2.show()
 
-    print('read_leaderboard end')
     return leaderboard_old_df    
     
 def read_checkpoints(spark, url, properties):
     # this should read only  most recent values in checkpoints or
-    print('read_checkpoints begin')
-
+    # select last value of checkpoints only
+    #SELECT timestamp, value, card 
+    #FROM my_table 
+    #ORDER BY timestamp DESC 
+    #LIMIT 1
+    
     checkpoints_old_df = spark.read.jdbc(url=url, table='checkpoints', properties=properties)
-    checkpoints_old_df.show()
     #n = 1
     #sql_statement = """SELECT userid, dt, lon_last, lat_last, segment_dist, total_dist FROM checkpoints WHERE userid = 1"""
     #checkpoints_old_df2 = spark.read.format("jdbc").option("url", url).option("user", os.environ['db_user_name']).option("password",os.environ['db_password']).option("driver", "org.postgresql.Driver").option("query", sql_statement).load()
     #checkpoints_old_df2.show()
-
-    print('read_checkpoints end')
     return checkpoints_old_df
 
-    # read
+    # alternative read syntax 
     # driver may not be needed here
     # # .option("dbtable", "checkpoints")
     # checkpoints_old_df3 = spark.read\
@@ -96,31 +97,53 @@ def read_checkpoints(spark, url, properties):
     #     .option("query", query)\
     #     .load()
     
-def update_checkpoints_table(checkpoints_new_to_insert_df, url, properties):
+def update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, start_or_update):
     # may need to append .save()
-    print('update_checkpoints_table begin')
-    mode = 'append'
-    checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
-    print('update_checkpoints_table end')
-    # write_df2.write \
-    #     .format("jdbc") \
-    #     .mode('append')\
-    #     .option("url", url) \
-    #     .option("dbtable", 'checkpoints') \
-    #     .option("user", os.environ['db_user_name']) \
-    #     .option("driver", "org.postgresql.Driver")\
-    #     .option("password",os.environ['db_password'])\
-    #     .save()
-    #     # .option("driver", "org.postgresql.Driver").save()
-
-
-def update_leaderboard_table(leaderboards_new_to_insert_df, url, properties):
-    print('update_leaderboard_table begin')
-    mode = 'overwrite'
-    leaderboards_new_to_insert_df.write.jdbc(url=url, table='leaderboard', mode=mode, properties=properties)    
-    print('update_leaderboard_table end')
-
+    if (start_or_update == 'start'):
+        print('update_checkpoints_table start')
+        #mode = 'overwrite'    
+        mode = 'append'
+        checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+    if (start_or_update == 'update'):
+        print('update_checkpoints_table update')
+        # this works
+        mode = 'append'    
+        checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+        # this erases previous entry  
+        #mode = 'overwrite'    
+        #checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
  
+    
+def update_leaderboard_table(leaderboard_new_to_insert_df, url, properties, start_or_update, db_user_name, db_password):
+    if (start_or_update == 'start'):
+        print('update_leaderboard_table start')
+        mode = 'overwrite'
+        leaderboard_new_to_insert_df.write.jdbc(url=url, table='leaderboard', mode=mode, properties=properties)
+    if (start_or_update == 'update'):
+        print('update_leaderboard_table update')
+        # no
+        #mode = 'overwrite'
+        # no
+        mode = 'append'
+        # no - 'ignore', 'error', 'errorifexists'
+        leaderboard_new_to_insert_df.write.jdbc(url=url, table='leaderboard', mode=mode, properties=properties)
+        # no
+        #leaderboard_new_to_insert_df.write.option("truncate", "true").jdbc(url=url, table='leaderboard', mode='overwrite', properties=properties)
+        #can try this next  
+        #alternative write syntax 
+        #leaderboard_new_to_insert_df.write \
+        #    .format("jdbc") \
+        #    .mode('overwrite')\
+        #    .option("url", url) \
+        #    .option("dbtable", 'leaderboard') \
+        #    .option("user", db_user_name) \
+        #    .option("driver", "org.postgresql.Driver")\
+        #    .option("password", db_password)\
+        #    .save()
+        #    # .option("driver", "org.postgresql.Driver").save()
+    
+
+    
 def main(file_name_input, file_name_output, start_or_update):
     
     time_start_all  = time.time()
@@ -151,9 +174,8 @@ def main(file_name_input, file_name_output, start_or_update):
     gps_stream_new_df = spark.read.format("csv").option("inferSchema",True).option("header", True).load(file_name_input)
     print('drop index column')
     gps_stream_new_df = gps_stream_new_df.drop('_c0')
-    gps_stream_new_df.show()
-
-    # gps_stream_new_df.show()
+    #print ('showing gps stream csv data')
+    #gps_stream_new_df.show()
 
     # pyspark --packages com.databricks:spark-csv_2.11:1.4.0    
     #schema = StructType([
@@ -249,15 +271,27 @@ def main(file_name_input, file_name_output, start_or_update):
 
     print('compute segment distance and first and last entries in checkpoint ')
 
+    #checkpoints_new_df = spark.sql("""SELECT FIRST(userid) AS userid , \
+    #    LAST(dt)   AS   dt_last, \
+    #    LAST(lon)  AS  lon_last, \
+    #    LAST(lat)  AS  lat_last, \
+    #    FIRST(lon) AS lon_first, \
+    #    FIRST(lat) AS lat_first, \
+    #    POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
+    #    FROM table_lon_lat_diff GROUP BY userid ORDER BY userid""")
     checkpoints_new_df = spark.sql("""SELECT FIRST(userid) AS userid , \
         LAST(dt)   AS   dt_last, \
         LAST(lon)  AS  lon_last, \
         LAST(lat)  AS  lat_last, \
         FIRST(lon) AS lon_first, \
         FIRST(lat) AS lat_first, \
-        POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
+        100*POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
         FROM table_lon_lat_diff GROUP BY userid ORDER BY userid""")
-    #checkpoints_new_df.show()
+
+    if (show_tables):
+        print ('showing checkpoints_new')
+        checkpoints_new_df.show()
+
 
     print('create table_checkpoints_new')    
     checkpoints_new_df.createOrReplaceTempView("table_checkpoints_new")
@@ -270,8 +304,13 @@ def main(file_name_input, file_name_output, start_or_update):
     # read checkpoints from db
     time_start = time.time()
     if (start_or_update == 'update'):
+        print('read_checkpoints begin')
         (checkpoints_old_df) = read_checkpoints(spark, url, properties)    
+        print('read_checkpoints end')
         checkpoints_old_df.createOrReplaceTempView("table_checkpoints_old")                    
+        if (show_tables):
+            print ('showing checkpoints_old')
+            checkpoints_old_df.show()
     time_end = time.time()
     process_dt_read_old_checkpoints = (time_end - time_start)/60.0    
     
@@ -279,37 +318,16 @@ def main(file_name_input, file_name_output, start_or_update):
     # read leaderboard from db
     time_start = time.time()
     if (start_or_update == 'update'):
+        print('read_leaderboard begin')
         (leaderboard_old_df) = read_leaderboard(spark, url, properties)
+        print('read_leaderboard end')
         leaderboard_old_df.createOrReplaceTempView("table_leaderboard_old")
+        if (show_tables):
+            print ('showing leaderboard_old')
+            leaderboard_old_df.show()
     time_end = time.time()
     process_dt_read_old_leaderboard = (time_end - time_start)/60.0    
-    
-    #############################################
-    # update leaderboard aggregate table 
-    time_start = time.time()
-
-    if   (start_or_update == 'start'):
-        # leaderboards first time
-        leaderboards_new_to_insert_df = spark.sql("""
-            SELECT userid, dt_last, lon_last, lat_last, segment_dist AS total_dist \
-            FROM table_checkpoints_new""")
-        #leaderboards_new_to_insert_df.show()
-    #elif (start_or_update == 'update'):
-    # leaderboard_old_df.show()
-    # checkpoints_old_df.show()
-    # checkpoints_new_df.show()
-    # userid dt_last lon_last lat_last lon_first lat_first segment_dist
-    # table_checkpoints_new
-    # checkpoints table
-    # userid dt_last lon_last lat_last                     segment_dist total_dist 
-    # leaderboard table
-    # userid dt_last lon_last lat_last total_dist 
         
-    update_leaderboard_table(leaderboards_new_to_insert_df, url, properties)
-
-    time_end = time.time()
-    process_dt_update_leaderboard = (time_end - time_start)/60.0    
-
     #############################################
     # insert checkpoints table with new data 
     time_start = time.time()
@@ -319,22 +337,119 @@ def main(file_name_input, file_name_output, start_or_update):
         checkpoints_new_to_insert_df = spark.sql("""
             SELECT userid, dt_last, lon_last, lat_last, segment_dist, segment_dist AS total_dist \
             FROM table_checkpoints_new""")
-        #checkpoints_new_to_insert_df.show()
-    #elif (start_or_update == 'update'):
-    update_checkpoints_table(checkpoints_new_to_insert_df, url, properties)
+    elif (start_or_update == 'update'):        
+        #checkpoints_new_to_insert_df = spark.sql(""" \
+        #    SELECT \
+        #    	table_checkpoints_new.userid, \
+        #    	table_checkpoints_new.dt_last, \
+        #    	table_checkpoints_new.lon_last, \
+        #    	table_checkpoints_new.lat_last, \
+        #    	table_checkpoints_new.segment_dist, \
+        #    	table_checkpoints_new.segment_dist + table_leaderboard_old.total_dist AS total_dist \
+        #    FROM \
+        #    	table_checkpoints_new \
+        #    INNER JOIN table_leaderboard_old ON table_leaderboard_old.userid = table_checkpoints_new.userid""")                             
+        checkpoints_new_to_insert_df = spark.sql(""" \
+            SELECT \
+            	table_checkpoints_new.userid, \
+            	table_checkpoints_new.dt_last, \
+            	table_checkpoints_new.lon_last, \
+            	table_checkpoints_new.lat_last, \
+            	table_checkpoints_new.segment_dist, \
+            	table_checkpoints_new.segment_dist + table_leaderboard_old.total_dist AS total_dist \
+            FROM \
+            	table_checkpoints_new \
+            INNER JOIN table_leaderboard_old ON table_leaderboard_old.userid = table_checkpoints_new.userid \
+            ORDER BY table_checkpoints_new.userid""")
+    if (show_tables):
+        print ('showing checkpoints_new_to_insert_df')
+        checkpoints_new_to_insert_df.show()
+
+        # start
+        # showing checkpoints_new_to_insert_df
+        # +------+-------+--------------------+--------------------+------------------+------------------+
+        # |userid|dt_last|            lon_last|            lat_last|      segment_dist|        total_dist|
+        # +------+-------+--------------------+--------------------+------------------+------------------+
+        # |     1|    976|-0.08610519580543041|0.020717130973935127| 9.607077509295362| 9.607077509295362|
+        # |     2|    984|-0.08652370423078537|0.012771924957633018| 9.846007855064297| 9.846007855064297|
+        # |     3|    980|-0.08222663775086403| 0.01911945641040802| 9.300389473522484| 9.300389473522484|
+        # |     4|    996|-0.09092353284358978|0.011275755241513252|10.258510429828288|10.258510429828288|
+        # +------+-------+--------------------+--------------------+------------------+------------------+
+
+        # update
+        # showing checkpoints_new_to_insert_df
+        # +------+-------+--------------------+--------------------+-----------------+------------------+
+        # |userid|dt_last|            lon_last|            lat_last|     segment_dist|        total_dist|
+        # +------+-------+--------------------+--------------------+-----------------+------------------+
+        # |     1|   1996|-0.18145269714295864| 0.04906279966235161|9.635817844142272|19.242895353437632|
+        # |     2|   1998|-0.17415138892829418|-0.01187690533697...|9.752911103904072| 19.59891895896837|
+        # |     3|   1995|-0.17565476708114147| 0.04585973918437958|9.352843717780662|18.653233191303144|
+        # |     4|   1990|-0.17610336653888226|-0.01102320849895...|9.578695349475543| 19.83720577930383|
+        # +------+-------+--------------------+--------------------+-----------------+------------------+
+
+
+    print('update_checkpoints_table begin')
+    update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, start_or_update)
+    print('update_checkpoints_table end')
         
     time_end = time.time()
     process_dt_update_checkpoints = (time_end - time_start)/60.0    
+        
+    #############################################
+    # update leaderboard aggregate table 
+    time_start = time.time()
+
+    if   (start_or_update == 'start'):
+        # leaderboards first time
+        leaderboard_new_to_insert_df = spark.sql("""
+            SELECT userid, dt_last, lon_last, lat_last, segment_dist AS total_dist \
+            FROM table_checkpoints_new""")
+        #leaderboard_new_to_insert_df = spark.sql("""
+        #    SELECT userid, dt_last, lon_last, lat_last, segment_dist AS total_dist \
+        #    FROM table_leaderboard_new""")
+    elif (start_or_update == 'update'):
+
+        #print ('showing leaderboard_new')
+        #leaderboard_new_to_insert_df.show()
+
+        
+        #FROM should be the main table         
+        # ORDER BY
+        #	customer.customer_id;
+       
+        leaderboard_new_to_insert_df = spark.sql(""" \
+            SELECT \
+            	table_checkpoints_new.userid, \
+            	table_checkpoints_new.dt_last, \
+            	table_checkpoints_new.lon_last, \
+            	table_checkpoints_new.lat_last, \
+            	table_checkpoints_new.segment_dist + table_leaderboard_old.total_dist AS total_dist \
+            FROM \
+            	table_checkpoints_new \
+            INNER JOIN table_leaderboard_old ON table_leaderboard_old.userid = table_checkpoints_new.userid \
+            ORDER BY table_checkpoints_new.userid""")
+                             
+    if (show_tables):
+        print ('showing leaderboard_new_to_insert_df')
+        leaderboard_new_to_insert_df.show()
+
+    print('update_leaderboard_table begin')
+    update_leaderboard_table(leaderboard_new_to_insert_df, url, properties, start_or_update, os.environ['db_user_name'], os.environ['db_password'])
+    print('update_leaderboard_table end')
+
+    time_end = time.time()
+    process_dt_update_leaderboard = (time_end - time_start)/60.0    
+
 
     #############################################
     # write to csv 
-    time_start = time.time()
-        
-    print('write to csv begin')
+    time_start = time.time()        
 
-    checkpoints_new_df.toPandas().to_csv(file_name_output)     
-    print('write to csv end')
-    
+    write_to_csv = False    
+    if (write_to_csv):
+        print('write to csv begin')
+        checkpoints_new_df.toPandas().to_csv(file_name_output)     
+        print('write to csv end')    
     time_end = time.time()
     process_dt_write_csv = (time_end - time_start)/60.0    
 

@@ -40,12 +40,20 @@ def main():
     except psycopg2.ProgrammingError:
         print      ('ERROR - table does not exist ') 
 
+    #sql_statement = """CREATE TABLE leaderboard (
+    #                    userid     INT PRIMARY KEY,
+    #                    dt_last    FLOAT  NOT NULL,
+    #                    lon_last   FLOAT  NOT NULL, 
+    #                    lat_last   DOUBLE PRECISION  NOT NULL, 
+    #                   total_dist FLOAT  NOT NULL
+    #                    );"""
     sql_statement = """CREATE TABLE leaderboard (
-                        userid     INT PRIMARY KEY,
+                        userid     INT,
                         dt_last    FLOAT  NOT NULL,
                         lon_last   FLOAT  NOT NULL, 
                         lat_last   DOUBLE PRECISION  NOT NULL, 
-                        total_dist FLOAT  NOT NULL
+                        total_dist FLOAT  NOT NULL,
+                        PRIMARY KEY (userid)                       
                         );"""
     #print(sql_statement)
     cursor.execute(sql_statement)
