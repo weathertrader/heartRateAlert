@@ -57,6 +57,7 @@ if (manual_debug):
         base_dir = '/home/ubuntu'
     work_dir = os.path.join(base_dir, 'raceCast')
     os.chdir(work_dir)
+    file_name_input = 'data/gps_stream_total_activities_001_dt_00.csv'
 else:
     work_dir = os.getcwd()
 
@@ -79,46 +80,6 @@ def main(file_name_input, drop_and_create_table):
         print('  open_connection_to_db success ') 
     except:
         print('  open_connection_to_db: ERROR ') 
-        
-    #drop_and_create_table = False
-    print('  drop_and_create_table is %s' %(drop_and_create_table))    
-    if (drop_and_create_table):
-        sql_statement = """DROP TABLE leaderboard;"""
-        cursor.execute(sql_statement)
-        # should dt be a primary key as well 
-        sql_statement = """CREATE TABLE leaderboard (
-                            userid     INT PRIMARY KEY,
-                            dt         FLOAT  NOT NULL,
-                            lon_last   FLOAT  NOT NULL, 
-                            lat_last   DOUBLE PRECISION  NOT NULL, 
-                            total_dist FLOAT  NOT NULL
-                            );"""
-        #print(sql_statement)
-        cursor.execute(sql_statement)
-
-        sql_statement = """DROP TABLE checkpoints;"""
-        cursor.execute(sql_statement)
-        # should dt be a primary key as well 
-        sql_statement = """CREATE TABLE checkpoints (
-                           userid       INT,
-                           dt           FLOAT,
-                           lon_last     FLOAT  NOT NULL, 
-                           lat_last     DOUBLE PRECISION  NOT NULL, 
-                           segment_dist FLOAT  NOT NULL,
-                           total_dist FLOAT  NOT NULL,
-                           PRIMARY KEY (userid, dt)
-                           );"""
-        #print(sql_statement)
-        cursor.execute(sql_statement)    
-        print('  tables dropped and created sucessfully ')
-        
-    #delete_all_entries_from_table = True
-    delete_all_entries_from_table = False
-    if (delete_all_entries_from_table):
-        sql_statement = """DELETE FROM leaderboard;"""
-        cursor.execute(sql_statement)
-        sql_statement = """DELETE FROM checkpoints;"""
-        cursor.execute(sql_statement)
         
     #batch_num = 0
     #for batch_num in range(0, 4, 1):
@@ -150,7 +111,8 @@ def main(file_name_input, drop_and_create_table):
     n_ids = len(batch_df)
     n = 0
     #for n in range(0, 1, 1):    
-    for n in range(0, n_ids, 1):    
+    #for n in range(0, n_ids, 1):    
+    for n in range(0, 5, 1):    
         if (n%1000 ==0 ):
             print('    processing user %5.0f of %5.0f ' %(n, n_ids))
         sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (int(batch_df['id'][n]))

@@ -1,3 +1,8 @@
+aws pg instance 
+i-0a44a5402b5b6207e (pg)
+vol-0ba5c5b7963b48a94
+
+
 
 
 # RaceCast 
@@ -10,6 +15,7 @@ Inline-style:
 ## Table of Contents
 1. [Installation](README.md#installation)
 1. [Data Preprocessing](README.md#Data-preprocessing)
+1. [Set up database tables](README.md#set-up-database-tables)
 1. [Streaming](README.md#streaming)
 1. [Run Instructions](README.md#Run-instructions)
 1. [Scripts](README.md#Scripts)
@@ -60,6 +66,83 @@ you can do so with the following on a locally hosted file
 head -n 5 gps_stream_total_activities_001_dt_*.csv
 tail -n 5 gps_stream_total_activities_001_dt_*.csv
 ```
+## Set up database tables
+
+On the postgres server run the `create_db.py` script to set up the database tables 
+```
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/create_db.py ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+python src/create_db.py
+```
+note that you will have to edit and source your .bashrc with the following environmental variables
+```
+vi .basrhc
+export db_name=racecast
+export db_host=localhost
+export db_user_name=ubuntu
+export db_password=''
+export db_port=5432
+```
+
+and also check that this script works from the Spark master 
+
+```
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/create_db.py ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+python src/create_db.py
+```
+note that in the .bashrc the db_host should now be the ip of the database server 
+```
+vi .bashrc
+export db_name=racecast
+export db_host=ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+export db_user_name=ubuntu
+export db_password=wofnlkj12980e0
+export db_port=5432
+```
+and on the pg_server you'll need to let pg know to listen on all incoming addresses 
+
+
+
+# change data_directory to match above in  
+cd /etc/postgresql/10/main
+sudo cp postgresql.conf postgresql.conf_old
+sudo vi /etc/postgresql/10/main/postgresql.conf
+and change 
+listen_addresses=’*’
+# listen_addresses=’localhost’
+
+sudo service postgresql restart
+sudo service postgresql status
+
+# note done yet 
+sudo cp pg_hba.conf pg_hba.conf_old
+add IP to the pg_hba.conf
+
+
+
+192.168.79.158
+Add IP to pg_hba.conf
+
+
+psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -136,13 +219,6 @@ https://github.com/remisalmon/Strava-to-GeoJSON/blob/master/strava_geojson.py
 https://github.com/fhirschmann/rdp/blob/master/rdp/__init__.py
 https://github.com/sebleier/RDP/blob/master/__init__.py
 
-
-
-
-
-
-
-
 ###############################################################################
 ###############################################################################
 # general scp and ssh
@@ -175,6 +251,9 @@ ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com
 # pg 
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-52-32-32-76.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-184-255-208.us-west-2.compute.amazonaws.com
+
 
 # master  
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/.
@@ -486,6 +565,8 @@ CREATE TABLE leaderboard (
 );
 
 
+98.33.42.216
+
 # change data_directory to match above in  
 cd /etc/postgresql/10/main
 sudo cp postgresql.conf postgresql.conf_old
@@ -496,77 +577,33 @@ uncomment or set listen_addresses=’*’
 sudo service postgresql restart
 sudo service postgresql status
 
-# note done yet 
-sudo cp pg_hba.conf pg_hba.conf_old
-add IP to the pg_hba.conf
 
-134.197.190.184 – DRI IP address old 
-192.168.144.150 – DRI IP address new 
-192.168.144.150 
 
-192.168.79.158
+
+
 Add IP to pg_hba.conf
 
+# test remote connection to db 
 
+curl telnet://ec2-34-216-105-134.us-west-2.compute.amazonaws.com:5432
 psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+psql -U ubuntu -d racecast -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
 
+psql -U ubuntu -d racecast -h 34.216.105.134
 
-CREATE TABLE leaderboard (
-  user       INTEGER PRIMARY KEY,
-  dt         FLOAT,
-  lon_last   FLOAT, 
-  lat_last   FLOAT, 
-  total_dist FLOAT);
-
-
-CREATE TABLE leaderboard (
-    user INT PRIMARY KEY,
-    dt         FLOAT,
-    lon_last   FLOAT, 
-    lat_last   FLOAT, 
-    total_dist FLOAT, 
-    type varchar (50) NOT NULL,
-    color varchar (25) NOT NULL,
-    location varchar(25) check (location in ('north', 'south', 'west', 'east', 'northeast', 'southeast', 'southwest', 'northwest')),
-    install_date date
-);
+# chance firewalls 
+on db server as su 
+sudo ufw allow 5432
+sudo ufw allow from 98.33.42.216/24 to any port 5432
+sudo ufw allow from 98.33.42.216 to any port 5432
+sudo ufw show added
+sudo ufw enable
 
 
 
-CREATE TABLE batch_diff (
-  user       INT4,
-  lon_last   FLOAT, 
-  lat_last   FLOAT, 
-PRIMARY KEY (user);
-
-CREATE TABLE batch_segment (
-  user           INT4,
-  sum_lon_diff   FLOAT, 
-  sum_lat_diff   FLOAT, 
-PRIMARY KEY (user);
-
-
-# drop tables 
-DROP TABLE leaderboard;
-DROP TABLE batch_diff;
-DROP TABLE batch_segment;
-# drop all entries in a table 
-DELETE from leaderboard;
 
 
 
-CREATE TABLE rolling (
-  user           INT4,
-  dt_first       FLOAT,
-  dt_last        FLOAT,
-  sum_lon_diff   FLOAT, 
-  sum_lat_diff   FLOAT, 
-  lon_first      FLOAT, 
-  lon_last       FLOAT, 
-  lat_first      FLOAT, 
-  lat_last       FLOAT, 
-PRIMARY KEY (user)
-);
 
 
 psql
@@ -597,25 +634,6 @@ space check df –h /var
 # open all inbound 5432 traffic
 
 
-#  datetime_valid   TIMESTAMP WITH TIME ZONE,
-#  stn_id           VARCHAR(10) REFERENCES stn (id) ON UPDATE CASCADE,
-# hgt              FLOAT,
-# domain           INT4,
-# ensemble_member  VARCHAR(96),
- 
- 
-CREATE TABLE stn (
-  id       VARCHAR(10) PRIMARY KEY,
-  name     TEXT NOT NULL,
-  obs_hgt  FLOAT NOT NULL DEFAULT 10.0,
-  mnet_id  INT4,
-  lon      DOUBLE PRECISION,
-  lat      DOUBLE PRECISION,
-  elev     FLOAT,
-  notes    TEXT
-);
-
-
 
 Show contents of table 
 SELECT * FROM stn;
@@ -624,54 +642,6 @@ INSERT INTO stn(id, name, obs_hgt, mnet_id, lon, lat, elev, notes) VALUES('KSBA'
 check table contents 
 SELECT * FROM stn;
   
-Remote connect to db from laptop 
-Testing 
-psql -U webapp -d makani -h archer.dri.edu
-psql -U webapp -d makani -h 138.68.2.68
-
-firewalls 
-on db server as su 
-sudo ufw allow 5432
-sudo ufw allow from 192.168.0.0/24 to any port 5432
-sudo ufw show added
-sudo ufw enable
-sudo ufw allow from 192.168.144.128/24 to any port 5432
-sudo ufw allow from 192.168.144.128 to any port 5432
-
-sudo ufw allow from 134.197.190.184/24 to any port 5432
-134.197.190.184
-sudo ufw allow from 192.168.144.150/24 to any port 5432
-
-
-
-
-
-
-
-
-DELETE FROM data_hrrr;
-DELETE FROM forecasts_downloaded_hrrr
-DELETE FROM forecasts_processed_hrrr
-
-
-
-
-Move location of postgres DB from /var/lib to mounted block volume 
-# Check current mount point 
-sudo -u postgres psql
-SHOW data_directory;
-\q
-# Stop the db 
-sudo service postgresql stop
-sudo service postgresql status
-# move the data over 
-sudo rsync -av /var/lib/postgresql /mnt/weathertrader-block-storage
-# move the old location to backup
-sudo mv /var/lib/postgresql/9.5/main /var/lib/postgresql/9.5/main.bak
-sudo chown postgres.postgres /mnt/weathertrader-block-storage/postgresql
-# note csmith 03/28/2018 havent done this yet, should free up 10 Gb on the DB server 
-sudo rm -rf /var/lib/postgresql/9.5/main.bak
-
 
 
 
