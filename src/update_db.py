@@ -24,11 +24,12 @@ if (autocommit):
 cursor = conn.cursor()
 print('  open_connection_to_db success ') 
 
-
+SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid;
 
 sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid"""
 checkpoints_df = pd.read_sql(sql_statement,conn)
 checkpoints_df.head(20)
+checkpoints_df.tail(20)
 
 
 # grab the last value of checkpoints only 

@@ -16,7 +16,6 @@ Inline-style:
 1. [Installation](README.md#installation)
 1. [Data Preprocessing](README.md#Data-preprocessing)
 1. [Set up database tables](README.md#set-up-database-tables)
-1. [Streaming](README.md#streaming)
 1. [Run Instructions](README.md#Run-instructions)
 1. [Scripts](README.md#Scripts)
 1. [To do](README.md#To-do)
@@ -49,14 +48,14 @@ src/run_preprocess_split.sh
 then upload all of the data files and our processing scripts to a remote server on ec2 since we will process them there
 ```
 # aws s3 cp data/ s3://gps-data-processed/ --recursive
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/data_preprocess.py ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/run_preprocess.sh ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_subset_by_activity_*.txt ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/data_preprocess.py ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/run_preprocess.sh ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_subset_by_activity_*.txt ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 
 ```
 and order the activities by time by running the following 
 ```
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ec2-34-222-54-126.us-west-2.compute.amazonaws.com
 cd raceCast
 src/run_preprocess.sh
 ```
@@ -70,13 +69,13 @@ tail -n 5 gps_stream_total_activities_001_dt_*.csv
 
 On the postgres server run the `create_db.py` script to set up the database tables 
 ```
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/create_db.py ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/create_db.py ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ec2-34-222-54-126.us-west-2.compute.amazonaws.com
 python src/create_db.py
 ```
 note that you will have to edit and source your .bashrc with the following environmental variables
 ```
-vi .basrhc
+vi .bashrc
 export db_name=racecast
 export db_host=localhost
 export db_user_name=ubuntu
@@ -97,53 +96,302 @@ vi .bashrc
 export db_name=racecast
 export db_host=ec2-34-216-105-134.us-west-2.compute.amazonaws.com
 export db_user_name=ubuntu
-export db_password=wofnlkj12980e0
+export db_password= 
 export db_port=5432
 ```
-and on the pg_server you'll need to let pg know to listen on all incoming addresses 
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+# Set up Postgres 
+
+# pg server 
+
+ssh ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+# set up a keypair from local to pg
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+# set up a keypair from master to pg
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+# check that you can ssh into pg
+
+# check that you can ssh into pg from master 
+
+
+
+# now ssh into the server 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+# install postgres 
+# preferred 
+sudo apt-get update && sudo apt upgrade && sudo apt-get install postgresql postgresql-contrib libpq-dev python3-psycopg2
+# dont know if this is needed or not 
+# sudo apt-get install python3-dev
+                                                                                                                                                                        
+# deprecated
+# sudo apt-get update && sudo apt upgrade && sudo apt install postgresql postgresql-contrib && sudo apt-get install libpq-dev python3-psycopg2 && sudo apt-get install conda
+
+# install miniconda 
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod 755 Miniconda3-latest-Linux-x86_64.sh
+source ~/.bashrc
+conda update conda 
+conda config --add channels conda-forge
+conda install -c conda-forge psycopg2 numpy pandas dash 
+# pip3 install psycopg2 psycopg2-binary
+
+
+# edit the .bashrc 
+
+vi ~/.bashrc
+export db_name=racecast
+export db_host=localhost
+export db_user_name=ubuntu
+export db_password=' '
+export db_port=5432
+
+and 
+mkdir ~/.aws
+vi ~/.profile 
+export AWS_ACCESS_KEY_ID=
+export AWS_SECRET_ACCESS_KEY=
+
+and
+mkdir .aws
+edit .aws/config with appropriate info 
+edit .aws/credentials with appropriate info 
+
+and
+mkdir -p raceCast/src raceCast/data
+
+
+# create postgresql user and database
+sudo su postgres
+psql
+CREATE USER ubuntu WITH PASSWORD '';
+CREATE DATABASE racecast WITH OWNER ubuntu;
+\q
+
+# now send up create_db script and see if it works 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/create_db.py ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/*sh ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+python src/create_db.py
+
+# now we will check read and insert permissions from the spark master to the pg_server 
+
+
+# scp the create_db script to the spark master
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/*py ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+
+# ssh into the spark master 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+
+# edit the .bashrc as before but change the db_host from localhost 
+export db_host=ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+# check that master can ssh into gp 
+ssh ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+1 - .conf file on pg and restart 
+2 - check security group
+3 - check VPC 
+
+
+# home IP
+98.33.42.216
+
+
+
+
+# worker 1
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# worker 2
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# worker 3 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# ssh keys master -> slave 4 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# ssh keys master -> slave5
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+# master -> pg
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+
 
 
 
 # change data_directory to match above in  
 cd /etc/postgresql/10/main
 sudo cp postgresql.conf postgresql.conf_old
+
 sudo vi /etc/postgresql/10/main/postgresql.conf
-and change 
+uncomment and set 
 listen_addresses=’*’
-# listen_addresses=’localhost’
 
-sudo service postgresql restart
-sudo service postgresql status
 
-# note done yet 
 sudo cp pg_hba.conf pg_hba.conf_old
-add IP to the pg_hba.conf
 
 
-
-192.168.79.158
 Add IP to pg_hba.conf
+and on the pg_server you'll need to let pg know to listen on all incoming addresses 
+# change data_directory to match above in  
 
-
-psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-
-
-
-
-
-
-
-
-
-
-
+sudo vi pg_hba.conf
+# Near bottom of file after local rules, add rule (allows remote access):
+host    all             all             0.0.0.0/0               md5
+host    all		        all		        all			            trust
+# what i was doing before under IPV4 connections
+# dont do this, not needed
+# host    all             all            98.33.42.216/32            md5
+# host    all             all  ec2-54-202-214-49.us-west-2.compute.amazonaws.com/32  md5
 
 
 
+sudo /etc/init.d/postgresql restart
+sudo /etc/init.d/postgresql status
+# i think this does not work 
+#sudo service postgresql restart
+#sudo service postgresql status
+
+
+# test the connection 
+
+# test remote connection to db 
+curl telnet://ec2-34-222-54-126.us-west-2.compute.amazonaws.com:5432
+
+# check connection from local 
+psql -U ubuntu -d racecast -p 5432 -h ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+# psql -U ubuntu -d racecast -p 5432 -h 34.216.105.134
+
+# test connection from master 
+import os
+import psycopg2
+conn = psycopg2.connect(database=os.environ['db_name'], host='ec2-34-222-54-126.us-west-2.compute.amazonaws.com', user     = os.environ['db_user_name'], password=os.environ['db_password'], port=os.environ['db_port'])    
+
+
+# add the postgres jar to master and all workers
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com://usr/local/spark/jars/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem postgresql-42.2.14.jar ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com:/home/ubuntu/.
+
+# do i need to edit the .bashrc of all workers with 
+
+
+
+and retest from spark instead of python 
+
+
+# no - dont do chance firewalls 
+# on db server as su 
+# sudo ufw allow 5432
+# sudo ufw allow from ec2-34-222-54-126.us-west-2.compute.amazonaws.com/24 to any port 5432
+# sudo ufw allow from ec2-34-222-54-126.us-west-2.compute.amazonaws.com to any port 5432
+# sudo ufw allow from 54.202.214.49/24 to any port 5432
+# sudo ufw allow from 54.202.214.49 to any port 5432
+# sudo ufw allow from 98.33.42.216/24 to any port 5432
+# sudo ufw allow from 98.33.42.216 to any port 5432
+# sudo ufw show added
+# sudo ufw enable
+# sudo service postgresql restart
+
+
+ 
+# pip3 install spyder‑kernels
 
 
 
 
+general postgresql commands 
+space check df –h /var
+
+# launch pg ec2 instance on ec2 
+# open all inbound 5432 traffic
+
+
+
+
+
+check user that postgres runs under
+ps aux | grep postgres
+user name is postgres
+login as user postgres
+sudo su - postgres
+
+
+Remove postgres
+sudo apt-get -purge remove postgresql
+sudo apt-get -purge remove postgresql-contrib
+
+
+
+Stop postgres
+sudo service postgresql stop
+
+delete users
+sudo userdel importer
+
+
+
+
+conda create -n pg_env
+conda activate pg_env
+
+
+
+
+sudo su postgres
+psql
+# to quit
+\q 
+#createuser --interactive
+ubuntu 
+# createdb racecast
+
+# login to postgres (as user postgres)
+psql 
+# quit postgres
+\q
+# display tables 
+\d
+\dt 
+# list databases
+\l 
+
+# List current roles and attributes 
+\du
+\di 
+# Show grant table 
+\z
+
+# login to psql database
+psql -d racecast 
+
+
+###############################################################################
+###############################################################################
 
 
 ## S3 storage setup
@@ -154,88 +402,31 @@ gps-data-processed
 
 
 
-## Streaming
-
-The data streamer is configured to run on multiple cores simultaneously and the data throughput can be tuned
-according to number of cores simultaneously, a delay in starting up each individual core, and a delay on a per-line basis in reading and streaming data
-These three command line arguments in order are `n_cores`, `core_delay`, and `line_delay`
-From the EC2 cli run one of the following: 
-
-```
-python src/produce_stream.py 1 1 0.0
-
-python src/produce_stream.py 8 10 0.001
-```
 
 ## Run Instructions
 
-Move the example.gpx file into the directory that contains files to process.
-
-`mv example.gpx data/gpx/.`
-
-Process the `gpx` file to geojson
 
 
-```
-python process_all_gpx_to_master.py --dir_gpx=data/gpx --dir_geojson=data/geojson
-```
-
-Plot the resulting data in a web browser 
-
-```
-python plot_master_geojson.py --dir_geojson=data/geojson
-```
-
-## Scripts 
-
-read individual gpx , apply rdp, write to geojson, aggregate all to single with visit counts 
-```
-process_all_gpx_to_master.py
-process_all_gpx_to_master.ipynb
-```
-
-plot master geojson tracks and recent individual tracks 
-```
-plot_master_geojson.py
-plot_master_geojson.ipynb
-
-```
 
 ## To do 
 
-### Map
-1. add junctions 
-2. thin points
-3. grab tracks via API instead of manually 
-4. Fix the master geojson colormap so that saturation occurs at 10 
-5. Add RAWS stations
 
-### Track processing
-- redo rdp algorithm on individual gpx  
-- remove stopped data using speed_min 
-
-## References 
-https://github.com/remisalmon/Strava-to-GeoJSON/blob/master/strava_geojson.py
-https://github.com/fhirschmann/rdp/blob/master/rdp/__init__.py
-https://github.com/sebleier/RDP/blob/master/__init__.py
 
 ###############################################################################
 ###############################################################################
 # general scp and ssh
 
-# worker 4
-ec2-34-219-195-126.us-west-2.compute.amazonaws.com
-# worker 5
-ec2-34-214-104-123.us-west-2.compute.amazonaws.com
-# pg instance 
-ec2-34-216-105-134.us-west-2.compute.amazonaws.com
 
-# ssh keys master -> slave 4 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
-# ssh keys master -> slave5
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
 
 rm -rf /usr/local/spark/work/app*
+
+
+export db_name=racecast
+export db_host=ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+export db_user_name=ubuntu
+export db_password= 
+export db_port=5432
+
 
 # master
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
@@ -245,14 +436,14 @@ ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.c
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
 # worker 3 
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+
 # worker 4 
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com
 # worker 5 
 ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com
 # pg 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-52-32-32-76.us-west-2.compute.amazonaws.com
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-184-255-208.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
 
 
 # master  
@@ -265,13 +456,13 @@ scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubu
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_processed_0.csv ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 # worker 4 
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem spark-2.4.5-bin-hadoop2.7.tgz ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com:/home/ubuntu/.
-# salve 5
+# worker 5
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem spark-2.4.5-bin-hadoop2.7.tgz ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com:/home/ubuntu/.
 
-# master to pg done 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
-# pg to master done 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com 'cat ~/.ssh/id_rsa.pub' | ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-216-105-134.us-west-2.compute.amazonaws.com 'cat >> ~/.ssh/authorized_keys'
+
+
+
+
 
 
 
@@ -401,28 +592,17 @@ bash ~/spark-2.4.5-bin-hadoop2.7/sbin/stop-slave.sh
 # create conda environment 
 conda create -n pyspark_env
 conda activate pyspark_env
-conda install -c conda-forge pyspark
-conda install -c conda-forge spyder‑kernels
-conda install -c conda-forge s3fs
+conda install -c conda-forge pyspark spyder‑kernels s3fs
 
-# on pg 
-install python from miniconda and 
-
-sudo apt-get update && sudo apt upgrade
-sudo apt install postgresql postgresql-contrib
-sudo apt-get install libpq-dev python3-psycopg2
-sudo apt-get install conda
 
 # did not install python-dev but may be needed
 # sudo apt-get install python3-dev
-sudo apt-get install
+
 
 sudo apt-get install pip
 pip3 install psycopg2
 # dont know if this is needed or not
 pip3 install psycopg2-binary
-
-
 
 # create conda environment for pg
 conda create -n pg_env
@@ -431,16 +611,6 @@ conda install -c conda-forge psycopg2 numpy pandas
 pip install spyder‑kernels
 
 # connect to postgres in spark 
-
-df.write 
-  .format("jdbc") 
-  .mode(action)
-  .option("url", "jdbc:postgresql://10.0.0.9:5432/"+os.environ['PSQL_DB']) 
-  .option("dbtable", table_name) 
-  .option("user", os.environ['PSQL_UNAME']) 
-  .option("driver", "org.postgresql.Driver")
-  .option("password",os.environ['PSQL_PWD'])
-  .save()
 
 
 
@@ -465,8 +635,6 @@ pip3 install psycopg2
 # dont know if this is needed or not
 pip3 install psycopg2-binary
 
-
-
 # create conda environment for pg
 conda create -n pg_env
 conda activate pg_env
@@ -477,6 +645,7 @@ conda install -c conda-forge s3fs
 
 
 sudo apt-get install s3fs
+
 
 
 
@@ -491,188 +660,6 @@ pip install spyder‑kernels
 ###############################################################################
 
 
-###############################################################################
-# pg
-
-# install pg on pg server 
-ssh ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-sudo apt-get update && sudo apt upgrade
-sudo apt install postgresql postgresql-contrib
-
-sudo su postgres
-psql
-# to quit
-\q 
-#createuser --interactive
-ubuntu 
-# createdb racecast
-
-# login to postgres (as user postgres)
-psql 
-# quit postgres
-\q
-# display tables 
-\d
-\dt 
-# list databases
-\l 
-
-# List current roles and attributes 
-\du
-\di 
-# Show grant table 
-\z
-
-
-
-# delete database
-DROP DATABASE racecast;
-
-# create postgresql database and tables 
-sudo su – postgres
-psql
-CREATE USER ubuntu WITH PASSWORD '';
-CREATE DATABASE racecast WITH OWNER ubuntu;
-\q
-
-# login to psql sundowner database
-psql -d racecast 
-
-
-
-
-# create tables 
-psql example.sql
-
-
-user
-dt_first
-dt_last
-sum_lon_diff
-sum_lat_diff
-lon_first
-lon_last
-lat_first
-lat_last
-
-
-CREATE TABLE leaderboard (
-    userid     INT PRIMARY KEY,
-    dt         FLOAT  NOT NULL,
-    lon_last   FLOAT  NOT NULL, 
-    lat_last   FLOAT  NOT NULL, 
-    total_dist FLOAT  NOT NULL
-);
-
-
-98.33.42.216
-
-# change data_directory to match above in  
-cd /etc/postgresql/10/main
-sudo cp postgresql.conf postgresql.conf_old
-sudo vi /etc/postgresql/10/main/postgresql.conf
-uncomment listen_addresses=’*’
-uncomment or set listen_addresses=’*’
-
-sudo service postgresql restart
-sudo service postgresql status
-
-
-
-
-
-Add IP to pg_hba.conf
-
-# test remote connection to db 
-
-curl telnet://ec2-34-216-105-134.us-west-2.compute.amazonaws.com:5432
-psql -U postgres -p 5432 -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-psql -U ubuntu -d racecast -h ec2-34-216-105-134.us-west-2.compute.amazonaws.com
-
-psql -U ubuntu -d racecast -h 34.216.105.134
-
-# chance firewalls 
-on db server as su 
-sudo ufw allow 5432
-sudo ufw allow from 98.33.42.216/24 to any port 5432
-sudo ufw allow from 98.33.42.216 to any port 5432
-sudo ufw show added
-sudo ufw enable
-
-
-
-
-
-
-
-
-psql
-CREATE USER importer WITH PASSWORD '';
-CREATE USER webapp WITH PASSWORD '';
-\q
-psql -d betterweather
-sudo service postgresql restart
-
-GRANT ALL ON ALL TABLES in SCHEMA public TO importer;
-GRANT SELECT ON ALL TABLES in SCHEMA public TO webapp;
-
-
-
-GRANT SELECT ON stn TO webapp;
-GRANT SELECT ON wrf TO webapp;
-GRANT SELECT ON obs TO webapp;
-Three options here, not sure if 1st works or 2nd works or both or neither, previous effort used last 3 commands 
-#GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO importer; 
-#GRANT ALL ON stn TO importer;
-#GRANT ALL ON wrf TO importer;
-#GRANT ALL ON obs TO importer;
-
-general postgresql commands 
-space check df –h /var
-
-# launch pg ec2 instance on ec2 
-# open all inbound 5432 traffic
-
-
-
-Show contents of table 
-SELECT * FROM stn;
-sample insert command 
-INSERT INTO stn(id, name, obs_hgt, mnet_id, lon, lat, elev, notes) VALUES('KSBA', 'Santa_Barbara_airport', '10.0', '2', '-118.0', '45.0', '100.0', 'note1');
-check table contents 
-SELECT * FROM stn;
-  
-
-
-
-Postgres stuff 
-install postgresql 
-sudo apt-get install postgresql postgresql-contrib
-check user that postgres runs under
-ps aux | grep postgres
-user name is postgres
-login as user postgres
-sudo su - postgres
-
-
-Remove postgres
-sudo apt-get -purge remove postgresql
-sudo apt-get -purge remove postgresql-contrib
-
-
-
-Delete postgres users
-DROP USER webapp;
-
-Stop postgres
-sudo service postgresql stop
-
-delete users
-sudo userdel importer
-
-
-###############################################################################
-###############################################################################
 
 
 

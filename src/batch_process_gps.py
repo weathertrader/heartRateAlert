@@ -28,8 +28,8 @@ import pyspark.sql.functions as F
 #from pyspark.sql.types import *
 #from pyspark.streaming import StreamingContext
  
-#manual_debug = False
-manual_debug = True
+manual_debug = False
+#manual_debug = True
 if (manual_debug):
     host_name = 'local'
     #host_name = 'master'
@@ -108,19 +108,21 @@ def read_checkpoints_most_recent(spark, url, properties, db_user_name, db_passwo
 
 def update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, start_or_update):
     # may need to append .save()
-    if   (start_or_update == 'start'):
-        print('update_checkpoints_table start')
-        #mode = 'overwrite'    
-        mode = 'append'
-        checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
-    elif (start_or_update == 'update'):
-        print('update_checkpoints_table update')
-        # this works
-        mode = 'append'    
-        checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
-        # this erases previous entry  
-        #mode = 'overwrite'    
-        #checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+    mode = 'append'
+    checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+    # if   (start_or_update == 'start'):
+    #     print('update_checkpoints_table start')
+    #     #mode = 'overwrite'    
+    #     mode = 'append'
+    #     checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+    # elif (start_or_update == 'update'):
+    #     print('update_checkpoints_table update')
+    #     # this works
+    #     mode = 'append'    
+    #     checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
+    #     # this erases previous entry  
+    #     #mode = 'overwrite'    
+    #     #checkpoints_new_to_insert_df.write.jdbc(url=url, table='checkpoints', mode=mode, properties=properties)
  
 def main(file_name_input, file_name_output, start_or_update):
     
@@ -212,7 +214,7 @@ def main(file_name_input, file_name_output, start_or_update):
     #                           lat-LAG(lat,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
     #                           AS lat_diff \
     #                           FROM gps_stream_new_table
-    #                           WHERE id < 5""")
+    #                           WHERE id < 1000""")
     
 
     df_lon_lat_diff = spark.sql("""SELECT id AS userid, dt, \
@@ -224,6 +226,15 @@ def main(file_name_input, file_name_output, start_or_update):
                                    FROM gps_stream_new_table
                                    WHERE id < 5
                                    ORDER BY id, dt """)
+
+    # df_lon_lat_diff = spark.sql("""SELECT id AS userid, dt, \
+    #                                lon, lat, \
+    #                                lon-LAG(lon,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
+    #                                AS lon_diff, \
+    #                                lat-LAG(lat,1,NULL) OVER (PARTITION BY id ORDER BY dt) \
+    #                                AS lat_diff \
+    #                                FROM gps_stream_new_table
+    #                                ORDER BY id, dt """)
         
     #df_lon_lat_diff.show()
     
@@ -269,7 +280,6 @@ def main(file_name_input, file_name_output, start_or_update):
     if (show_tables):
         print ('showing checkpoints_new')
         checkpoints_new_df.show()
-
 
     print('create table_checkpoints_new')    
     checkpoints_new_df.createOrReplaceTempView("table_checkpoints_new")

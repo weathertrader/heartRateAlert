@@ -47,12 +47,20 @@ def main():
     #                    lat_last   DOUBLE PRECISION  NOT NULL, 
     #                   total_dist FLOAT  NOT NULL
     #                    );"""
+    #sql_statement = """CREATE TABLE leaderboard (
+    #                    userid     INT,
+    #                    dt_last    FLOAT  NOT NULL,
+    #                    lon_last   FLOAT  NOT NULL, 
+    #                   lat_last   DOUBLE PRECISION  NOT NULL, 
+    #                    total_dist FLOAT  NOT NULL,
+    #                    PRIMARY KEY (userid)                       
+    #                    );"""
     sql_statement = """CREATE TABLE leaderboard (
                         userid     INT,
-                        dt_last    FLOAT  NOT NULL,
-                        lon_last   FLOAT  NOT NULL, 
-                        lat_last   DOUBLE PRECISION  NOT NULL, 
-                        total_dist FLOAT  NOT NULL,
+                        dt_last    FLOAT,
+                        lon_last   FLOAT, 
+                        lat_last   DOUBLE PRECISION, 
+                        total_dist FLOAT,
                         PRIMARY KEY (userid)                       
                         );"""
     #print(sql_statement)
@@ -69,12 +77,21 @@ def main():
     sql_statement = """CREATE TABLE checkpoints (
                        userid       INT,
                        dt_last      FLOAT,
-                       lon_last     FLOAT  NOT NULL, 
-                       lat_last     DOUBLE PRECISION  NOT NULL, 
-                       segment_dist FLOAT  NOT NULL,
-                       total_dist   FLOAT  NOT NULL,
+                       lon_last     FLOAT, 
+                       lat_last     DOUBLE PRECISION, 
+                       segment_dist FLOAT,
+                       total_dist   FLOAT,
                        PRIMARY KEY (userid, dt_last)
                        );"""
+    #sql_statement = """CREATE TABLE checkpoints (
+    #                   userid       INT,
+    #                   dt_last      FLOAT,
+    #                   lon_last     FLOAT  NOT NULL, 
+    #                   lat_last     DOUBLE PRECISION  NOT NULL, 
+    #                   segment_dist FLOAT  NOT NULL,
+    #                   total_dist   FLOAT  NOT NULL,
+    #                   PRIMARY KEY (userid, dt_last)
+    #                   );"""
     #print(sql_statement)
     cursor.execute(sql_statement)    
     print('table checkpoints successfully created')
