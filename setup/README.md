@@ -600,8 +600,6 @@ conda activate pyspark_env
 conda install -c conda-forge pyspark spyder‑kernels s3fs
 
 
-
-
 # did not install python-dev but may be needed
 # sudo apt-get install python3-dev
 

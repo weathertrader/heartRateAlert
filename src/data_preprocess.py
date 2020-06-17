@@ -201,7 +201,10 @@ def preprocess_inputs(n_files):
         print ('  hr   min - max is %5.2f - %5.2f' %(np.nanmin( hr_all), np.nanmax( hr_all)))
  
         print('  sort by time start ')
-        index_sort = np.argsort(dt_all)    
+        # original - sort by dt
+        #index_sort = np.argsort(dt_all)    
+        # new      - sort by id
+        index_sort = np.argsort(id_all)    
         data_df = pd.DataFrame(data={'dt' : dt_all [index_sort],
                                      'id' : id_all [index_sort],
                                      'lon': lon_all[index_sort],

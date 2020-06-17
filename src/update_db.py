@@ -1,5 +1,13 @@
 
 
+import os
+import psycopg2
+import pandas as pd
+conn = psycopg2.connect(database = os.environ['db_name'], host = os.environ['db_host'], user = os.environ['db_user_name'], password = os.environ['db_password'], port = os.environ['db_port'])    
+sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid"""
+checkpoints_df = pd.read_sql(sql_statement,conn)
+checkpoints_df.head(20)
+
 
 # query the pg data 
 import os

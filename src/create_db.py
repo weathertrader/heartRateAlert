@@ -34,45 +34,18 @@ def main():
         print('open_connection_to_db: ERROR ') 
         sys.exit()
 
-    try:
-        sql_statement = """DROP TABLE leaderboard;"""
-        cursor.execute(sql_statement)
-    except psycopg2.ProgrammingError:
-        print      ('ERROR - table does not exist ') 
-
-    #sql_statement = """CREATE TABLE leaderboard (
-    #                    userid     INT PRIMARY KEY,
-    #                    dt_last    FLOAT  NOT NULL,
-    #                    lon_last   FLOAT  NOT NULL, 
-    #                    lat_last   DOUBLE PRECISION  NOT NULL, 
-    #                   total_dist FLOAT  NOT NULL
-    #                    );"""
-    #sql_statement = """CREATE TABLE leaderboard (
-    #                    userid     INT,
-    #                    dt_last    FLOAT  NOT NULL,
-    #                    lon_last   FLOAT  NOT NULL, 
-    #                   lat_last   DOUBLE PRECISION  NOT NULL, 
-    #                    total_dist FLOAT  NOT NULL,
-    #                    PRIMARY KEY (userid)                       
-    #                    );"""
-    sql_statement = """CREATE TABLE leaderboard (
-                        userid     INT,
-                        dt_last    FLOAT,
-                        lon_last   FLOAT, 
-                        lat_last   DOUBLE PRECISION, 
-                        total_dist FLOAT,
-                        PRIMARY KEY (userid)                       
-                        );"""
-    #print(sql_statement)
-    cursor.execute(sql_statement)
-
-    print('table leaderboard successfully created')
+    print ('drop table checkpoints start')
 
     try:
         sql_statement = """DROP TABLE checkpoints;"""
         cursor.execute(sql_statement)
     except psycopg2.ProgrammingError:
         print      ('ERROR - table does not exist ') 
+        pass 
+    
+    print ('drop table checkpoints end')
+
+    print ('create table checkpoints start')
  
     sql_statement = """CREATE TABLE checkpoints (
                        userid       INT,
@@ -96,6 +69,54 @@ def main():
     cursor.execute(sql_statement)    
     print('table checkpoints successfully created')
         
+    print ('create table checkpoints end')
+
+
+
+    print ('drop table leaderboard start')
+
+    try:
+        sql_statement = """DROP TABLE leaderboard;"""
+        cursor.execute(sql_statement)
+    except psycopg2.ProgrammingError:
+        print      ('ERROR - leaderboard table does not exist ') 
+        pass 
+    
+    print ('drop table leaderboard end')
+
+    #sql_statement = """CREATE TABLE leaderboard (
+    #                    userid     INT PRIMARY KEY,
+    #                    dt_last    FLOAT  NOT NULL,
+    #                    lon_last   FLOAT  NOT NULL, 
+    #                    lat_last   DOUBLE PRECISION  NOT NULL, 
+    #                   total_dist FLOAT  NOT NULL
+    #                    );"""
+    #sql_statement = """CREATE TABLE leaderboard (
+    #                    userid     INT,
+    #                    dt_last    FLOAT  NOT NULL,
+    #                    lon_last   FLOAT  NOT NULL, 
+    #                   lat_last   DOUBLE PRECISION  NOT NULL, 
+    #                    total_dist FLOAT  NOT NULL,
+    #                    PRIMARY KEY (userid)                       
+    #                    );"""
+
+    print ('create table leaderboard start')
+
+    sql_statement = """CREATE TABLE leaderboard (
+                        userid     INT,
+                        dt_last    FLOAT,
+                        lon_last   FLOAT, 
+                        lat_last   DOUBLE PRECISION, 
+                        total_dist FLOAT,
+                        PRIMARY KEY (userid)                       
+                        );"""
+    #print(sql_statement)
+    cursor.execute(sql_statement)
+
+    print ('create table leaderboard end')
+    print('table leaderboard successfully created')
+
+    
     #delete_all_entries_from_table = True
     #delete_all_entries_from_table = False
     #if (delete_all_entries_from_table):

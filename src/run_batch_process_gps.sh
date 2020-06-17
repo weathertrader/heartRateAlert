@@ -10,14 +10,19 @@ sleep_interval=2
 
 # ec2 create_db
 python src/create_db.py
+sleep $sleep_interval
 
 # 0 start local instance w s3 data
-spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py s3a://gps-data-processed/gps_stream_total_activities_001_dt_00.csv s3a://gps-data-processed/gps_batch_total_activities_001_dt_00.csv start
+# spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars ~/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --master local src/batch_process_gps.py s3a://gps-data-processed/gps_stream_total_activities_001_dt_00.csv s3a://gps-data-processed/gps_batch_total_activities_001_dt_00.csv start
 
 # 0 start master w s3 data
 spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path /usr/local/spark/jars/postgresql-42.2.14.jar --jars /usr/local/spark/jars/postgresql-42.2.14.jar --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_total_activities_001_dt_00.csv s3a://gps-data-processed/gps_batch_total_activities_001_dt_00.csv start
+sleep $sleep_interval
 # 1 update master w s3 data
 spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path /usr/local/spark/jars/postgresql-42.2.14.jar --jars /usr/local/spark/jars/postgresql-42.2.14.jar --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_total_activities_001_dt_01.csv s3a://gps-data-processed/gps_batch_total_activities_001_dt_01.csv update
+sleep $sleep_interval
+# 2 update master w s3 data
+spark-submit --packages com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7 --driver-class-path /usr/local/spark/jars/postgresql-42.2.14.jar --jars /usr/local/spark/jars/postgresql-42.2.14.jar --master spark://ec2-54-202-214-49.us-west-2.compute.amazonaws.com:7077 src/batch_process_gps.py s3a://gps-data-processed/gps_stream_total_activities_001_dt_02.csv s3a://gps-data-processed/gps_batch_total_activities_001_dt_02.csv update
 
 
 
