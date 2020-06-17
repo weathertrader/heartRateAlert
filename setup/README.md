@@ -1,6 +1,4 @@
-aws pg instance 
-i-0a44a5402b5b6207e (pg)
-vol-0ba5c5b7963b48a94
+
 
 
 
@@ -664,7 +662,44 @@ pip install spyder‑kernels
 # dash
 ###############################################################################
 
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.postgresql:postgresql:42.2.14 pyspark-shell'
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--driver-class-path /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar --jars /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar'
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages /home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/jars/postgresql-42.2.14.jar pyspark-shell'
 
 
 
+      
+# # Returns dataframe column names and data types
+# df.dtypes
+# # Displays the content of dataframe
+# df.show()
+# # Return first n rows
+# df.head(10)
+# # Returns first row
+# df.first()
+# # Return first n rows
+# df.take(5)
+# # Computes summary statistics
+# df.describe().show()
+# # Returns columns of dataframe
+# df.columns
+# # Counts the number of rows in dataframe
+# df.count()
+# # Counts the number of distinct rows in dataframe
+# df.distinct().count()
+# # Prints plans including physical and logical
+# df.explain(4)
+  
+######################################
+# write to s3 stuff here 
+# df = pd.read_csv('s3://gps-data-processed/gps_stream_3.csv')
+# fs = s3fs.S3FileSystem(anon=False)
+# fs = s3fs.S3FileSystem(anon=True)
+# fs.ls('gps-data-processed')
+# fs.touch('gps-data-processed/test.txt') 
+# fs.put(file_path,s3_bucket + "/" + rel_path)
+# fs = s3fs.S3FileSystem(anon=False, key='<Access Key>', secret='<Secret Key>')
+
+    
+    
 
