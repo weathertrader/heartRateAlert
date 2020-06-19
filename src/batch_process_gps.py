@@ -12,6 +12,9 @@ import time
 #from pyspark import SparkContext
 #from pyspark import SparkConf
 from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+#from pyspark.sql.types import StructType
+
 #from pyspark.sql import SQLContext
 #from pyspark.sql import Row
 #from pyspark.sql.functions import abs
@@ -21,7 +24,6 @@ from pyspark.sql import SparkSession
 #from pyspark.sql.functions import *
 #from pyspark.sql.functions import explode
 #from pyspark.sql.functions import split
-#from pyspark.sql.types import *
 #from pyspark.streaming import StreamingContext
  
 manual_debug = False
@@ -92,32 +94,45 @@ def main(file_name_input, file_name_output, start_or_update):
         
     time_start = time.time()
     print('read csv begin ')
-    gps_stream_new_df = spark.read.format("csv").option("inferSchema",True).option("header", True).load(file_name_input)
+
+    schema_type = 'define'
+    #schema_type = 'infer'
+    if   (schema_type == 'define'):
+        # dt,id,lon,lat,hr
+        # 0,0,1,0.0,0.0,100
+        # 1,566,1,-0.041455384343862534,0.008386597037315369,146
+    
+        #schema = StructType([
+        #    StructField("_c0", IntegerType(),True),
+        #    StructField("dt", IntegerType(),True),
+        #    StructField("lon", DoubleType(),True),
+        #    StructField("lat", DoubleType(),True),
+        #    StructField("hr", IntegerType(),True)
+        #])
+        schema = StructType([
+            StructField("_c0", IntegerType()),
+            StructField("dt", IntegerType()),
+            StructField("id", IntegerType()),
+            StructField("lon", DoubleType()),
+            StructField("lat", DoubleType()),
+            StructField("hr", IntegerType())
+        ])        
+        #gps_stream_new_df = spark.read.format("csv").schema(schema).option("inferSchema",False).option("header", True).load(file_name_input)
+        gps_stream_new_df = spark.read.format("csv").schema(schema).option("header", True).load(file_name_input)
+    elif (schema_type == 'infer'):
+        gps_stream_new_df = spark.read.format("csv").option("inferSchema",True).option("header", True).load(file_name_input)
+        
     print('drop index column')
     gps_stream_new_df = gps_stream_new_df.drop('_c0')
     #print ('showing gps stream csv data')
     #gps_stream_new_df.show()
 
     # pyspark --packages com.databricks:spark-csv_2.11:1.4.0    
-    #schema = StructType([
-    #    StructField("sales", IntegerType(),True), 
-    #    StructField("sales person", StringType(),True)
-    #])
-    # schema = StructType([
-    #     StructField("_c0", IntegerType()),
-    #     StructField("dt", IntegerType()),
-    #     StructField("lon", DoubleType()),
-    #     StructField("lat", DoubleType()),
-    #     StructField("hr", IntegerType())
-    # ])
-
-    # df = spark.read.format("csv").schema(schema).option("header",True).load(file_name_input)
-    # df = spark.read.format("com.databricks.spark.csv").schema(schema).option("header",True).load(file_name_input)
     
     #display(df)
     #print(df.collect())
-    #df.show()
-    #df.printSchema()
+    #gps_stream_new_df.show()
+    #gps_stream_new_df.printSchema()
     
     # csv data example 
     # ,dt,id,lon,lat,hr
@@ -159,13 +174,21 @@ def main(file_name_input, file_name_output, start_or_update):
     df_lon_lat_diff.createOrReplaceTempView("table_lon_lat_diff")
     
     print('compute segment distance and first and last entries in checkpoint ')
+    #checkpoints_new_df = spark.sql("""SELECT FIRST(userid) AS userid , \
+    #    LAST(dt)   AS   dt_last, \
+    #    LAST(lon)  AS  lon_last, \
+    #    LAST(lat)  AS  lat_last, \
+    #    FIRST(lon) AS lon_first, \
+    #    FIRST(lat) AS lat_first, \
+    #    100*POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
+    #    FROM table_lon_lat_diff GROUP BY userid ORDER BY userid""")
     checkpoints_new_df = spark.sql("""SELECT FIRST(userid) AS userid , \
-        LAST(dt)   AS   dt_last, \
+        LAST(dt)/1000.0 AS   dt_last, \
         LAST(lon)  AS  lon_last, \
         LAST(lat)  AS  lat_last, \
         FIRST(lon) AS lon_first, \
         FIRST(lat) AS lat_first, \
-        100*POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
+        10*POWER(POWER(sum(abs(lon_diff)),2)+POWER(sum(abs(lat_diff)),2),0.5) AS segment_dist \
         FROM table_lon_lat_diff GROUP BY userid ORDER BY userid""")
 
     if (show_tables):
@@ -174,7 +197,12 @@ def main(file_name_input, file_name_output, start_or_update):
 
     print('create table_checkpoints_new')    
     checkpoints_new_df.createOrReplaceTempView("table_checkpoints_new")
-                                
+        
+    #qc_large_segments = True                  
+    #if (qc_large_segments):
+    #    sql_statement = """UPDATE table_checkpoints_new SET segment_dist = NULL WHERE segment_dist > 50.0""";
+    #    cursor.execute(sql_statement)
+      
     #checkpoints_new_df.show()
     time_end = time.time()
     process_dt_process_new_checkpoints = (time_end - time_start)/60.0    
@@ -234,6 +262,11 @@ def main(file_name_input, file_name_output, start_or_update):
         print ('showing checkpoints_new_to_insert_df')
         checkpoints_new_to_insert_df.show()
 
+    time_end = time.time()
+    process_dt_join_tables = (time_end - time_start)/60.0    
+
+    time_start = time.time()
+
     print('update_checkpoints_table begin')
     update_checkpoints_table(checkpoints_new_to_insert_df, url, properties, start_or_update)
     print('update_checkpoints_table end')
@@ -257,10 +290,13 @@ def main(file_name_input, file_name_output, start_or_update):
     process_dt_all = (time_end_all - time_start_all)/60.0    
 
     # print timing to console 
+    print('#################################################')
+    print('file_name_input  is %s' %(file_name_input))
     print (f'csv_read                took {process_dt_csv_read :6.2f} minutes ')
     print (f'process_new             took {process_dt_process_new_checkpoints  :6.2f} minutes ')
     print (f'read_old_checkpoints    took {process_dt_read_old_checkpoints:6.2f} minutes ')
     print (f'read_checkpoints_recent took {process_dt_read_checkpoints_most_recent:6.2f} minutes ')
+    print (f'join_tables             took {process_dt_join_tables:6.2f} minutes ')
     print (f'update_checkpoints      took {process_dt_update_checkpoints:6.2f} minutes ')
     print (f'write                   took {process_dt_write_csv:6.2f} minutes ')
     print (f'all                     took {process_dt_all      :6.2f} minutes ')
@@ -276,7 +312,7 @@ if __name__ == "__main__":
         start_or_update  = sys.argv[3]        
         print('file_name_input  is %s' %(file_name_input))
         print('file_name_output is %s' %(file_name_output))
-        print('  start_or_update is %s' %(start_or_update))
+        print('start_or_update is %s' %(start_or_update))
         print('calling main before ')
         main(file_name_input, file_name_output, start_or_update)
         print('script executed succesfully ')

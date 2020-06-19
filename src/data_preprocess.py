@@ -55,8 +55,8 @@ def preprocess_inputs(n_files):
     dt_max_expected = 20000.0
     dt_int = dt_max_expected/n_batch
     n = 1
-    #for n in range(0, n_batch, 1):
-    for n in range(0, 4, 1):
+    #for n in range(0, 4, 1):
+    for n in range(0, n_batch, 1):
         count_all = 0
         [dt_min_n, dt_max_n] = [n*dt_int, (n+1)*dt_int]
         print('  processing n %s of %s, dt %s - %s ' %(n, n_batch, dt_min_n, dt_max_n))
@@ -96,46 +96,49 @@ def preprocess_inputs(n_files):
             
             with open(input_file) as file_open:
                 for line in file_open:
-                    #if (line_count%100 == 0):
-                    #    print ('      line_count %6.0f start_count %6.0f end_count %6.0f ' %(line_count, start_count, end_count))
-                    #    #print ('     line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
-                    line_strip = line.replace(':','').replace('{','').replace('}','')        
-                    lon_temp = np.array(ast.literal_eval(line_strip.split('longitude')[1].split('altitude')[0].replace('],',']').replace("' ",'').replace("] '",']')))
-                    lat_temp = np.array(ast.literal_eval(line_strip.split('latitude')[1].split('sport')[0].replace('],',']').replace("' ",'').replace("] '",']')))
-                    dt_temp  = np.array(ast.literal_eval(line_strip.split('timestamp')[1].split('url')[0].replace('],',']').replace("' ",'').replace("] '",']')))
-                    hr_temp  = np.array(ast.literal_eval(line_strip.split('heart_rate')[1].split('gender')[0].replace('],',']').replace("' ",'').replace("] '",']')))
-        
-                    lon_temp = lon_temp - lon_temp[0]
-                    lat_temp = lat_temp - lat_temp[0] 
-                    dt_temp  =  dt_temp -  dt_temp[0] 
-
-                    #dt_max_temp = np.nanmax(dt_temp)
-                    #if (dt_min_temp < dt_min):
-                    #    print('dt min max first last is %5.2f, %5.2f, %5.2f, %5.2f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
-                    #    dt_min = dt_min_temp
-                    #if (dt_max_temp < dt_max):
-                    #    print('dt min max first last is %5.2f, %5.2f, %5.2f, %5.2f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
-                    #    dt_max = dt_max_temp
-                    dt_min_temp = np.nanmin(dt_temp)
-                    dt_max_temp = np.nanmax(dt_temp)
-                    #if (dt_min_temp < 0) or (dt_max_temp > 28800.0):
-                    #    print('    dt min max first last is %8.0f, %8.0f, %8.0f, %8.0f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
-                    #else: 
-                    if ((dt_min_temp >= 0) and (dt_max_temp < 28800.0)):
-                        #n_records_per_activity = len(lon_temp)
-                        #n_records_per_activity = 10
-                        print_progress = False
-                        #print_progress = True
-                        if (print_progress):
-                            if (line_count%1000 == 0):
-                                #print ('    count %6.0f line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(count, line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
-                                print ('      count %6.0f dt min max is %6.0f %6.0f ' %(line_count, dt_temp[0], dt_temp[-1]))
+                    id_temp = id_start + line_count+1
+                    if not (id_temp == 3899):                    
+                        #if (line_count%100 == 0):
+                        #    print ('      line_count %6.0f start_count %6.0f end_count %6.0f ' %(line_count, start_count, end_count))
+                        #    #print ('     line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
+                        line_strip = line.replace(':','').replace('{','').replace('}','')        
+                        lon_temp = np.array(ast.literal_eval(line_strip.split('longitude')[1].split('altitude')[0].replace('],',']').replace("' ",'').replace("] '",']')))
+                        lat_temp = np.array(ast.literal_eval(line_strip.split('latitude')[1].split('sport')[0].replace('],',']').replace("' ",'').replace("] '",']')))
+                        dt_temp  = np.array(ast.literal_eval(line_strip.split('timestamp')[1].split('url')[0].replace('],',']').replace("' ",'').replace("] '",']')))
+                        hr_temp  = np.array(ast.literal_eval(line_strip.split('heart_rate')[1].split('gender')[0].replace('],',']').replace("' ",'').replace("] '",']')))
             
-                        id_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = id_start + line_count+1
-                        dt_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] =  dt_temp
-                        lon_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lon_temp
-                        lat_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lat_temp
-                        hr_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = hr_temp
+                        lon_temp = lon_temp - lon_temp[0]
+                        lat_temp = lat_temp - lat_temp[0] 
+                        dt_temp  =  dt_temp -  dt_temp[0] 
+    
+                        #dt_max_temp = np.nanmax(dt_temp)
+                        #if (dt_min_temp < dt_min):
+                        #    print('dt min max first last is %5.2f, %5.2f, %5.2f, %5.2f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
+                        #    dt_min = dt_min_temp
+                        #if (dt_max_temp < dt_max):
+                        #    print('dt min max first last is %5.2f, %5.2f, %5.2f, %5.2f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
+                        #    dt_max = dt_max_temp
+                        dt_min_temp = np.nanmin(dt_temp)
+                        dt_max_temp = np.nanmax(dt_temp)
+                        #if (dt_min_temp < 0) or (dt_max_temp > 28800.0):
+                        #    print('    dt min max first last is %8.0f, %8.0f, %8.0f, %8.0f' %(dt_min_temp, dt_max_temp, dt_temp[0], dt_temp[-1]))
+                        #else: 
+                        if ((dt_min_temp >= 0) and (dt_max_temp < 28800.0)):
+                            #n_records_per_activity = len(lon_temp)
+                            #n_records_per_activity = 10
+                            print_progress = False
+                            #print_progress = True
+                            if (print_progress):
+                                if (line_count%1000 == 0):
+                                    #print ('    count %6.0f line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(count, line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
+                                    print ('      count %6.0f dt min max is %6.0f %6.0f ' %(line_count, dt_temp[0], dt_temp[-1]))
+                
+                            id_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = id_temp
+                            #id_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = id_start + line_count+1
+                            dt_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] =  dt_temp
+                            lon_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lon_temp
+                            lat_file[(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = lat_temp
+                            hr_file [(line_count*n_records_per_activity):(line_count*n_records_per_activity+n_records_per_activity)] = hr_temp
                         line_count += 1
 
             time_end = time.time()

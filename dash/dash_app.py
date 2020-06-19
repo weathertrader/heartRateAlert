@@ -29,71 +29,83 @@ def open_connection_to_db():
         print      ('open_connection_to_db: ERROR ') 
     return conn, cursor
 
+def get_most_recent_values_by_single_userid(conn,cursor,userid):
+    #sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (userid)
+    sql_statement = """SELECT userid, dt_last, total_dist \
+        FROM checkpoints WHERE userid = '%s' \
+        ORDER BY dt_last DESC \
+        LIMIT 1""" % (int(userid))
+    # n = 33753
+    # sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
+    # cursor.execute(sql_statement)
+    # results = cursor.fetchall()
+    # print(results)
+    #sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist 
+    #                           FROM leaderboard 
+    #                           ORDER BY total_dist DESC
+    #                           LIMIT 10"""
+    cursor.execute(sql_statement)
+    user_most_recent_checkpoint = cursor.fetchall()[0]
+    #print(leaders_df.head())
+    return user_most_recent_checkpoint
 
-def get_checkpoints_by_userid(conn,cursor,userid):
-    sql_statement = """SELECT userid, dt, segment_dist, total_dist FROM checkpoints WHERE userid = '%s'""" % (int(userid))
+def get_checkpoints_by_single_userid(conn,cursor,userid):
+    sql_statement = """SELECT userid, dt_last, segment_dist, total_dist FROM checkpoints WHERE userid = '%s'""" % (int(userid))
     user_checkpoint_df = pd.read_sql(sql_statement,conn)
     #print(user_checkpoint_df.head())
     #user_last_checkpoint = user_checkpoint_df.iloc[0]['userid']
     #if (batch_df['id'][n] == 1):
-    #    print('    found checkpoint user %s dt %5.1f lon %5.1f lat %5.1f  segment_dist %5.1f ' %(user_checkpoint_df.iloc[-1]['userid'], user_checkpoint_df.iloc[-1]['dt'], user_checkpoint_df.iloc[-1]['lon_last'], user_checkpoint_df.iloc[-1]['lat_last'], user_checkpoint_df.iloc[-1]['segment_dist']))
+    #    print('    found checkpoint user %s dt %5.1f lon %5.1f lat %5.1f  segment_dist %5.1f ' %(user_checkpoint_df.iloc[-1]['userid'], user_checkpoint_df.iloc[-1]['dt_last'], user_checkpoint_df.iloc[-1]['lon_last'], user_checkpoint_df.iloc[-1]['lat_last'], user_checkpoint_df.iloc[-1]['segment_dist']))
     return user_checkpoint_df
 
-def get_leaders_from_db(conn,cursor):
-    # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
-    # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist 
-    sql_statement = """SELECT userid, dt, total_dist 
-                               FROM leaderboard 
-                               ORDER BY total_dist DESC
-                               LIMIT 10"""
-    leaders_df = pd.read_sql(sql_statement,conn)
-    leaders_df.columns = ['userid', 'last reported time', 'distance_traveled']
-    #cursor.execute(sql_statement)
-    #results = cursor.fetchall()
-    #print(leaders_df.head())
-    return leaders_df
+def get_current_leaderboard(conn,cursor):
+    sql_statement = """SELECT userid, dt_last, segment_dist, total_dist \
+        FROM checkpoints \
+        WHERE total_dist IS NOT NULL \
+        AND segment_dist < 2.0 \
+        ORDER BY total_dist DESC \
+        LIMIT 20""" 
+    leaderboard_df = pd.read_sql(sql_statement,conn)
+    #leaderboard_df.drop('segment_dist', axis=1, inplace=True)
+    #leaderboard_df['userid'] = leaderboard_df['userid'].map("{:,.0f}".format)
+    leaderboard_df['userid']  = leaderboard_df['userid'].map("{:.0f}".format)
+    leaderboard_df['dt_last'] = leaderboard_df['dt_last'].map("{:.1f}".format)
+    leaderboard_df['segment_dist'] = leaderboard_df['segment_dist'].map("{:.2f}".format)
+    leaderboard_df['total_dist'] = leaderboard_df['total_dist'].map("{:.2f}".format)
+    #leaderboard_df.head(50)
+    return leaderboard_df
 
-def get_values_by_userid(conn,cursor,userid):
-    #sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (userid)
-    sql_statement = """SELECT userid, dt, total_dist FROM leaderboard WHERE userid = '%s'""" % (int(userid))
-    # n = 33753
-    # sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
-    # cursor.execute(sql_statement)
-    # results = cursor.fetchall()
-    # print(results)
-    #sql_statement = """SELECT userid, dt, lon_last, lat_last, total_dist 
-    #                           FROM leaderboard 
-    #                           ORDER BY total_dist DESC
-    #                           LIMIT 10"""
-    #leaders_df = pd.read_sql(sql_statement,conn)
-    cursor.execute(sql_statement)
-    results = cursor.fetchall()
-    #print(leaders_df.head())
-    return results
-
-def generate_table(leaders_df, max_rows=10):
+def generate_table(leaderboard_df, max_rows=10):
     return html.Table([
         html.Thead(
-            html.Tr([html.Th(col) for col in leaders_df.columns])
+            html.Tr([html.Th(col) for col in leaderboard_df.columns])
         ),
         html.Tbody([
             html.Tr([
-                html.Td(leaders_df.iloc[i][col]) for col in leaders_df.columns
-            ]) for i in range(min(len(leaders_df), max_rows))
+                html.Td(leaderboard_df.iloc[i][col]) for col in leaderboard_df.columns
+            ]) for i in range(min(len(leaderboard_df), max_rows))
         ])
     ])
 
+
+
 (conn,cursor) = open_connection_to_db()
-leaders_df = get_leaders_from_db(conn, cursor)
-#leaders_df.head()
 
-#userid = 33753
-userid = 0
-(results) = get_values_by_userid(conn,cursor,userid)
-#print(results)
+userid = 1
+(user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,userid)
+#print(user_checkpoint_df.head(20))
 
-(user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,userid)
-#print(user_checkpoint_df.head())
+(leaderboard_df) = get_current_leaderboard(conn,cursor)
+#leaderboard_df.columns = ['userid', 'last reported time', 'distance_traveled']
+leaderboard_df.columns = ['userid', 'last report [min]', 'last segment distance [km]', 'total distance [km]']
+print(leaderboard_df.head(40))
+
+(user_most_recent_checkpoint) = get_most_recent_values_by_single_userid(conn,cursor,userid)
+#print(user_most_recent_checkpoint)
+
+
+
+
 
 
 
@@ -103,15 +115,16 @@ userid = 0
 #app.layout = html.Div(children=[
 app.layout = html.Div([
     html.Div(html.H1('RaceCast: Live Race Leaderboard'), style={'textAlign': 'center'}),
-    html.Div(generate_table(leaders_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+    html.Div(generate_table(leaderboard_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
     #html.Div(id='div_figure1', style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+    html.Div(html.H2('Leaderboard Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
     html.Div(id='div_figure1', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),
 
     html.Div(html.H2('To track progress on an athlete, enter their ID'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
 
     #html.Div(dcc.Input(id='div_user_id_text_box1', value='1', type='text')),
-    html.Div(dcc.Input(id='div_user_id_text_box2', value='1',type='text')),
-    html.Button('Submit', id='submit-val', n_clicks=0),
+    html.Div(dcc.Input(id='div_user_id_text_box2', value='1',type='text'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+    html.Div(html.Button('Submit', id='submit-val', n_clicks=0), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
     html.Div(id='container-button-basic',children='Enter a value and press submit'),
     html.Div(id='div_display-userid'),
     html.Div(id='div_figure2'),
@@ -133,18 +146,18 @@ app.layout = html.Div([
 def update_output_div(input_value):
     return 'User selected is {}'.format(input_value)
 
-
-
 @app.callback(
     Output(component_id='div_figure1',component_property='children'),
     [Input(component_id='div_user_id_text_box2',component_property='value')]    
 )
 def update_graph1(div_user_id_text_box2):
-    leaders_df = get_leaders_from_db(conn, cursor)
-    leaders_ids = leaders_df['userid']
+    leaderboard_df = get_current_leaderboard(conn, cursor)
+    #print(leaderboard_df.head(20))    
+    leaders_ids = leaderboard_df['userid']
     n_leaders = len(leaders_ids)
     for n in range(0, n_leaders, 1):
-        (user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,leaders_ids[n])
+        (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,leaders_ids[n])
+        #print(user_checkpoint_df.head(20))
         if   (n == 0):
             df_temp0 = user_checkpoint_df
         elif (n == 1):
@@ -157,22 +170,22 @@ def update_graph1(div_user_id_text_box2):
         figure=dict(
             data=[
                 dict(
-                    x=df_temp0['dt'],
+                    x=df_temp0['dt_last'],
                     y=df_temp0['total_dist'],
                     name=leaders_ids[0],
                     marker=dict(color='rgb(55, 83, 109)')),
                 dict(
-                    x=df_temp1['dt'],
+                    x=df_temp1['dt_last'],
                     y=df_temp1['total_dist'],
                     name=leaders_ids[1],
                     marker=dict(color='rgb(15, 100, 100)')),
                 dict(
-                    x=df_temp2['dt'],
+                    x=df_temp2['dt_last'],
                     y=df_temp2['total_dist'],
                     name=leaders_ids[2],
                     marker=dict(color='rgb(80, 20, 30)')),
                 dict(
-                    x=df_temp3['dt'],
+                    x=df_temp3['dt_last'],
                     y=df_temp3['total_dist'],
                     name=leaders_ids[3],
                     marker=dict(color='rgb(55, 109, 10)')),
@@ -181,11 +194,11 @@ def update_graph1(div_user_id_text_box2):
                 title='Leaderboard Progress vs Time ',
                 xaxis={'title': 'elapsed time [s]',
                        'type': 'linear',
-                       'range': [0, 50]
+                       'range': [0, 10]
                       },
                 yaxis={'title': 'distance traveled',
                        'type': 'linear', 
-                       'range': [0, 50]
+                       'range': [0, 30]
                       },
                 showlegend=True,
                 legend=dict(
@@ -209,13 +222,13 @@ n_clicks = 10
     [dash.dependencies.Input('submit-val', 'n_clicks')],
     [dash.dependencies.State('div_user_id_text_box2', 'value')])
 def update_graph2(n_clicks, div_user_id_text_box2):
-    (user_checkpoint_df) = get_checkpoints_by_userid(conn,cursor,div_user_id_text_box2)
-    print(user_checkpoint_df.head())
+    (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,div_user_id_text_box2)
+    #print(user_checkpoint_df.head())
     return dcc.Graph(
         figure=dict(
             data=[
                 dict(
-                    x=user_checkpoint_df['dt'],
+                    x=user_checkpoint_df['dt_last'],
                     y=user_checkpoint_df['total_dist'],
                     name=div_user_id_text_box2,
                     marker=dict(color='rgb(55, 83, 109)'))
@@ -224,11 +237,11 @@ def update_graph2(n_clicks, div_user_id_text_box2):
                 title='User '+str(div_user_id_text_box2)+' distance vs time   ',
                 xaxis={'title': 'elapsed time [s]',
                        'type': 'linear',
-                       'range': [0, 50]
+                       'range': [0, 10]
                       },
                 yaxis={'title': 'distance traveled',
                        'type': 'linear', 
-                       'range': [0, 50]
+                       'range': [0, 30]
                       },
                 #x='x Axis Title',
                 #xaxis=dict('title':'title_text',  range:(0,10,1)),
@@ -242,8 +255,17 @@ def update_graph2(n_clicks, div_user_id_text_box2):
         style={'height': 400},
     )
 
+# ec2
 if __name__ == '__main__':
     app.run_server(debug=True)
+    #app.run_server(debug=True, port=8050, host='ec2-34-222-54-126.us-west-2.compute.amazonaws.com')
+
+
+# ec2-34-222-54-126.us-west-2.compute.amazonaws.com:8050
+
+# local
+#if __name__ == '__main__':
+
 
 
 #app.layout = html.Div([
@@ -407,15 +429,15 @@ if __name__ == '__main__':
 
 
 #''' This functions converts a dataframe into an HTML table '''
-# def generate_table2(leaders_df, max_rows=10):
+# def generate_table2(leaderboard_df, max_rows=10):
 #     return html.Table(
 #         # Header
-#         [html.Tr([html.Th(col) for col in leaders_df.columns])] +
+#         [html.Tr([html.Th(col) for col in leaderboard_df.columns])] +
 
 #         # Body
 #         [html.Tr([
-#             html.Td(html.A(str(int(leaders_df.iloc[i][col])), href='https://stackoverflow.com/questions/'+str(int(leaders_df.iloc[i][col])))) for col in leaders_df.columns
-#         ]) for i in range(min(len(leaders_df), max_rows))]
+#             html.Td(html.A(str(int(leaderboard_df.iloc[i][col])), href='https://stackoverflow.com/questions/'+str(int(leaderboard_df.iloc[i][col])))) for col in leaderboard_df.columns
+#         ]) for i in range(min(len(leaderboard_df), max_rows))]
 #     )
 
 
@@ -508,4 +530,177 @@ if __name__ == '__main__':
 #    app.run_server(debug=True,host="0.0.0.0",port=80)
 
     
+    
+#FROM checkpoints \
+#     ORDER BY userid,total_dist DESC"""
+# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY userid DESC""" 
+
+# # no
+# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY userid,total_dist DESC""" 
+
+# # no
+# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist,userid DESC""" 
+
+# # does not work 
+# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY userid DESC
+#     ORDER BY total_dist DESC""" 
+
+
+# sql_statement = """SELECT DISTINCT ON (total_dist) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist DESC""" 
+
+# sql_statement = """SELECT DISTINCT ON (total_dist) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist,userid ASC""" 
+
+
+
+# # 1
+# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist,userid ASC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+# # 2
+# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist,userid DESC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+# # 3
+# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY userid,total_dist ASC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+# # 4
+# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY userid,total_dist DESC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+
+# sql_statement = """SELECT DISTINCT ON (userid,total_dist) userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist,userid ASC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+
+
+
+
+# sql_statement = """SELECT userid, dt_last, total_dist \
+#     FROM checkpoints \
+#     ORDER BY total_dist DESC""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+
+
+# SELECT 
+# first(COL1) over (partition by user_id order by COL2 rows unbounded following) 
+# FROM table;
+
+
+# sql_statement = """SELECT last(userid) |
+#     OVER (PARTITION BY userid ORDER BY total_dist) \
+#     FROM checkpoints""" 
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+
+
+# sql_statement = """SELECT last(userid, dt_last, total_dist)
+#     OVER (PARTITION BY userid ORDER BY total_dist) \
+#     FROM checkpoints \
+#     ORDER BY total_dist DESC""" 
+
+
+
+# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid"""
+# checkpoints_df = pd.read_sql(sql_statement,conn)
+# checkpoints_df.head(20)
+# checkpoints_df.tail(20)
+
+
+
+
+# sql_statement = """SELECT userid, dt_last, total_dist FROM checkpoints"""
+# cursor.execute(sql_statement)
+# results = cursor.fetchall()
+# print(results)
+
+
+# userid = 1
+
+
+# sql_statement = """SELECT userid, dt_last, total_dist 
+#     FROM checkpoints 
+#     WHERE userid = 1
+#     ORDER BY dt_last DESC
+#     LIMIT 1"""
+
+
+
+
+    
+# cursor.execute(sql_statement)
+# results = cursor.fetchall()
+# print(results)
+
+
+
+
+
+# #cursor.execute(sql_statement)
+# #results = cursor.fetchall()
+# #print(leaderboard_df.head())
+# return leaderboard_df
+
+
+# (leaderboard_df) = get_current_leaderboard(conn,cursor)
+# leaderboard_df.head(20)
+
+
+# (conn,cursor) = open_connection_to_db()
+
+# userid = 1
+# (most_recent_results_single_id) = get_most_recent_values_by_single_userid(conn,cursor,userid)
+# print(most_recent_results_single_id)
+
+# (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,userid)
+# print(user_checkpoint_df)
+# user_checkpoint_df.head()
+
+
+# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
+# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist 
+#sql_statement = """SELECT userid, dt_last, total_dist 
+#                           FROM leaderboard 
+#                           ORDER BY total_dist DESC
+#                           LIMIT 10"""
+#sql_statement = """SELECT userid, dt_last, total_dist 
+#                           FROM leaderboard 
+#                           ORDER BY total_dist DESC
+#                           LIMIT 10"""
+#sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
+# 
+
+
+
+
+
     

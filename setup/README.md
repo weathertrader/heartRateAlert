@@ -1,6 +1,29 @@
 
+# copy to master 
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/* ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
+# copy dash app to pg
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem dash/* ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/dash/.
 
 
+
+# master
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
+
+# worker 1
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
+# worker 2
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
+# worker 3 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
+# worker 4 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com
+# worker 5 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com
+# pg 
+ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
+
+# clean up space on spark workers
+rm -rf /usr/local/spark/work/app*
 
 
 # RaceCast 
@@ -48,7 +71,7 @@ then upload all of the data files and our processing scripts to a remote server 
 # aws s3 cp data/ s3://gps-data-processed/ --recursive
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/data_preprocess.py ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
 scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem src/run_preprocess.sh ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/src/.
-scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_subset_by_activity_*.txt ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
+scp -i ~/.ssh/sundownerwatch-IAM-keypair.pem data/gps_tracks_subset_by_activity_*.txt ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com:/home/ubuntu/raceCast/data/.
 
 ```
 and order the activities by time by running the following 
@@ -429,23 +452,6 @@ export db_host=ec2-34-222-54-126.us-west-2.compute.amazonaws.com
 export db_user_name=ubuntu
 export db_password= 
 export db_port=5432
-
-
-# master
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-54-202-214-49.us-west-2.compute.amazonaws.com
-# worker 1
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-18-237-177-6.us-west-2.compute.amazonaws.com
-# worker 2
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-205-202.us-west-2.compute.amazonaws.com
-# worker 3 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-215-182-26.us-west-2.compute.amazonaws.com
-
-# worker 4 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-219-195-126.us-west-2.compute.amazonaws.com
-# worker 5 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-214-104-123.us-west-2.compute.amazonaws.com
-# pg 
-ssh -i ~/.ssh/sundownerwatch-IAM-keypair.pem ubuntu@ec2-34-222-54-126.us-west-2.compute.amazonaws.com
 
 
 
