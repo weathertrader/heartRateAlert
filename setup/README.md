@@ -2,7 +2,7 @@
 # RaceCast Infra Setup
 
 Inline-style: 
-![alt text](images/racecast_tech_stack.png "hover text")
+![alt text](../images/racecast_tech_stack.png "hover text")
 
 
 ## Table of Contents
@@ -129,7 +129,6 @@ On the master and on all workers, install the following
 
 sudo apt-get update && sudo apt upgrade
 sudo apt-get install openjdk-8-jre-headless
-# note here I had to install 11 since 8 did not work 
 sudo apt-get install scala
 v 2.11.12
 scala -version

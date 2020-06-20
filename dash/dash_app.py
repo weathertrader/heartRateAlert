@@ -11,6 +11,18 @@ import numpy as np
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# app = dash.Dash()
+colors = {
+    'background': '#111111',
+    'text': 'white'
+    #'text': '#7FDBFF'
+}
+width_line  = 4
+size_marker = 12
+plot_height = 300
+plot_width  = 800
+
+
 
 def open_connection_to_db():
     print('open_connection_to_db ')    
@@ -100,51 +112,55 @@ userid = 1
 leaderboard_df.columns = ['userid', 'last report [min]', 'last segment distance [km]', 'total distance [km]']
 print(leaderboard_df.head(40))
 
-(user_most_recent_checkpoint) = get_most_recent_values_by_single_userid(conn,cursor,userid)
+#(user_most_recent_checkpoint) = get_most_recent_values_by_single_userid(conn,cursor,userid)
 #print(user_most_recent_checkpoint)
 
-
-
-
-
-
-
-
-
-#    html.H1(children='RaceCast: Live Race Leaderboard'),
-#app.layout = html.Div(children=[
-app.layout = html.Div([
-    html.Div(html.H1('RaceCast: Live Race Leaderboard'), style={'textAlign': 'center'}),
-    html.Div(generate_table(leaderboard_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-    #html.Div(id='div_figure1', style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-    html.Div(html.H2('Leaderboard Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-    html.Div(id='div_figure1', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),
-
-    html.Div(html.H2('To track progress on an athlete, enter their ID'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-
-    #html.Div(dcc.Input(id='div_user_id_text_box1', value='1', type='text')),
-    html.Div(dcc.Input(id='div_user_id_text_box2', value='1',type='text'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-    html.Div(html.Button('Submit', id='submit-val', n_clicks=0), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-    html.Div(id='container-button-basic',children='Enter a value and press submit'),
-    html.Div(id='div_display-userid'),
-    html.Div(id='div_figure2'),
-    #dcc.Graph(id='graph1')
+app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
+    html.Div(html.H1('RaceCast'), style={'textAlign': 'center','color': colors['text']}),
+    html.Div([        
+        html.Div([
+            html.Div(html.H2('Live Race Leaderboard'), style={'textAlign': 'center','color': colors['text']}),
+            #html.Div(generate_table(leaderboard_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})
+            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'width': '100%', 'display': 'flex', 'justify-content': 'center'}),
+            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'width': '100%', 'display': 'flex', 'justify-content': 'center'}),            
+            html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),            
+            #html.Div(html.H2('Athlete Tracker,  Enter ID'), style={'color': colors['text'],'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),       
+            #html.Div(html.H2(id='div_display-userid', style={'textAlign': 'center','color': colors['text']})),
+            html.Div(html.H2(id='div_display-userid', style={'color': colors['text'],'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})),
+            
+            #html.Div(dcc.Input(id='div_user_id_text_box1', value='1', type='text')),
+            html.Div([
+                dcc.Input(id='div_user_id_text_box2', value='41',type='text', style={'color': 'black', 'margin-left': '20px', 'margin-right': '20px'}), 
+                html.Button('Submit', id='submit-val', n_clicks=0, style={'color': colors['text']})
+            ], style={'color': colors['text'],'margin-top': '10px','margin-bottom': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}, className="row"),
+            #html.Div([
+            #    #html.Div(dcc.Input(id='div_user_id_text_box2', value='11',type='text'), style={'color': colors['text'], 'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+            #    html.Div(dcc.Input(id='div_user_id_text_box2', value='41',type='text'), style={'color': colors['text']}),
+            #    html.Div(html.Button('Submit', id='submit-val', n_clicks=0, style={'color': colors['text']})),
+            #], className="six columns"),
+        ], className="six columns"),
+        html.Div([
+            html.Div(html.H2('Progress vs Time'), style={'textAlign': 'center','color': colors['text']}),
+            #html.Div(html.H2('Leaderboard Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+            html.Div(id='div_figure1', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),       
+            #html.Div(html.H2('User Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+            html.Div(id='div_figure2', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),       
+        ], className="six columns"),
+    ], className="row")
 ])
 
-
-#@app.callback(
-#    dash.dependencies.Output('container-button-basic', 'children'),
-#    [dash.dependencies.Input('submit-val', 'n_clicks')],
-#    [dash.dependencies.State('div_user_id_text_box2', 'value')])
-#def update_output(n_clicks, value):
-#    return 'User selected is "{}" '.format(value)
 
 @app.callback(
     Output('div_display-userid', 'children'),
     [Input('div_user_id_text_box2',  'value')]
 )
 def update_output_div(input_value):
-    return 'User selected is {}'.format(input_value)
+    (results) = get_most_recent_values_by_single_userid(conn,cursor,input_value)
+    print(results)
+    text = 'User '+str(results[0])+ ' reported '+str("{:.1f}".format(results[2]))+ ' km at '+str("{:.1f}".format(results[1]))+' min'
+    print(text)
+    #return 'User selected is {}'.format(input_value)
+    return text
 
 @app.callback(
     Output(component_id='div_figure1',component_property='children'),
@@ -155,8 +171,12 @@ def update_graph1(div_user_id_text_box2):
     #print(leaderboard_df.head(20))    
     leaders_ids = leaderboard_df['userid']
     n_leaders = len(leaders_ids)
+    x_max = 0.0
+    y_max = 0.0
     for n in range(0, n_leaders, 1):
         (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,leaders_ids[n])
+        x_max = max(x_max, np.nanmax(user_checkpoint_df['dt_last']))
+        y_max = max(y_max, np.nanmax(user_checkpoint_df['total_dist']))
         #print(user_checkpoint_df.head(20))
         if   (n == 0):
             df_temp0 = user_checkpoint_df
@@ -166,6 +186,9 @@ def update_graph1(div_user_id_text_box2):
             df_temp2 = user_checkpoint_df
         elif (n == 3):
             df_temp3 = user_checkpoint_df
+
+    x_max = x_max+1
+    y_max = y_max+1
     return dcc.Graph(
         figure=dict(
             data=[
@@ -173,42 +196,47 @@ def update_graph1(div_user_id_text_box2):
                     x=df_temp0['dt_last'],
                     y=df_temp0['total_dist'],
                     name=leaders_ids[0],
-                    marker=dict(color='rgb(55, 83, 109)')),
+                    marker=dict(color='red', size=size_marker),
+                    line  =dict(color='red', width=width_line, dash='dash')),
                 dict(
                     x=df_temp1['dt_last'],
                     y=df_temp1['total_dist'],
                     name=leaders_ids[1],
-                    marker=dict(color='rgb(15, 100, 100)')),
+                    marker=dict(color='blue', size=size_marker),
+                    line  =dict(color='blue', width=width_line, dash='dot')),
                 dict(
                     x=df_temp2['dt_last'],
                     y=df_temp2['total_dist'],
                     name=leaders_ids[2],
-                    marker=dict(color='rgb(80, 20, 30)')),
+                    marker=dict(color='green', size=size_marker),
+                    line  =dict(color='green', width=width_line)),
                 dict(
                     x=df_temp3['dt_last'],
                     y=df_temp3['total_dist'],
                     name=leaders_ids[3],
-                    marker=dict(color='rgb(55, 109, 10)')),
+                    marker=dict(color='cyan', size=size_marker),
+                    line  =dict(color='cyan', width=width_line)),
             ],
             layout=dict(
-                title='Leaderboard Progress vs Time ',
-                xaxis={'title': 'elapsed time [s]',
+                title='Leaderboard Checkpoints',
+                xaxis={'title': 'elapsed time [min]',
                        'type': 'linear',
-                       'range': [0, 10]
+                       'range': [0, x_max],
+                       'size': 16,
+                       'font': dict(size=30)
                       },
-                yaxis={'title': 'distance traveled',
+                yaxis={'title': 'distance traveled [km]',
                        'type': 'linear', 
-                       'range': [0, 30]
+                       'range': [0, y_max],
+                       'font' : 30,
                       },
                 showlegend=True,
-                legend=dict(
-                    x=0,
-                    y=1.0
-                ),
-                margin=dict(l=40, r=0, t=40, b=30)
+                legend=dict(x=0.0,y=1.0, font_size=16),                
+                margin=dict(autoexpand=False,l=80, r=60, t=60, b=60, pad=4),
+                paper_bgcolor='white',
             )
         ),
-        style={'height': 300},
+        style={'height': plot_height, 'width': plot_width},
     )
 
 #@app.callback(
@@ -218,11 +246,13 @@ def update_graph1(div_user_id_text_box2):
 
 n_clicks = 10
 @app.callback(
-    dash.dependencies.Output('container-button-basic', 'children'),
+    dash.dependencies.Output('div_figure2', 'children'),
     [dash.dependencies.Input('submit-val', 'n_clicks')],
     [dash.dependencies.State('div_user_id_text_box2', 'value')])
 def update_graph2(n_clicks, div_user_id_text_box2):
     (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,div_user_id_text_box2)
+    x_max = np.nanmax(user_checkpoint_df['dt_last'])+1
+    y_max = np.nanmax(user_checkpoint_df['total_dist'])+1
     #print(user_checkpoint_df.head())
     return dcc.Graph(
         figure=dict(
@@ -231,105 +261,37 @@ def update_graph2(n_clicks, div_user_id_text_box2):
                     x=user_checkpoint_df['dt_last'],
                     y=user_checkpoint_df['total_dist'],
                     name=div_user_id_text_box2,
-                    marker=dict(color='rgb(55, 83, 109)'))
+                    marker=dict(color='red', size=size_marker),
+                    line  =dict(color='red', width=width_line)),
             ],
             layout=dict(
-                title='User '+str(div_user_id_text_box2)+' distance vs time   ',
-                xaxis={'title': 'elapsed time [s]',
+                title='User '+str(div_user_id_text_box2)+' Checkpoints',
+                xaxis={'title': 'elapsed time [min]',
                        'type': 'linear',
-                       'range': [0, 10]
+                       'range': [0, x_max]
                       },
-                yaxis={'title': 'distance traveled',
+                yaxis={'title': 'distance traveled [km]',
                        'type': 'linear', 
-                       'range': [0, 30]
+                       'range': [0, y_max]
                       },
                 #x='x Axis Title',
                 #xaxis=dict('title':'title_text',  range:(0,10,1)),
                 #y='y Axis Title',
                 #yaxis={'range': range(0,10,1)},
-                showlegend=True,
+                showlegend=False,
                 legend=dict(x=0,y=1.0),
-                margin=dict(l=40, r=0, t=60, b=60)
+                #margin=dict(autoexpand=True, pad=40),
+                #margin=dict(autoexpand=False,l=100, r=20, t=100, b=20, pad=4),
+                margin=dict(autoexpand=False,l=80, r=60, t=60, b=60, pad=4),
+                paper_bgcolor='white',                
                 )    
             ),
-        style={'height': 400},
+        style={'height': plot_height, 'width': plot_width},
     )
 
-# ec2
 if __name__ == '__main__':
     app.run_server(debug=True)
     #app.run_server(debug=True, port=8050, host='ec2-34-222-54-126.us-west-2.compute.amazonaws.com')
-
-
-# ec2-34-222-54-126.us-west-2.compute.amazonaws.com:8050
-
-# local
-#if __name__ == '__main__':
-
-
-
-#app.layout = html.Div([
-#])
-
-
-
-# @app.callback(
-#     Output('div_figure1', 'figure'),
-#     [Input('div_user_id_text_box2', 'value')])
-# def update_figure(selected_year):
-#     return {
-
-#         'data': traces,
-#         'layout': dict(
-#             xaxis={'type': 'log', 'title': 'GDP Per Capita',
-#                    'range':[2.3, 4.8]},
-#             yaxis={'title': 'Life Expectancy', 'range': [20, 90]},
-#             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-#             legend={'x': 0, 'y': 1},
-#             hovermode='closest',
-#             transition = {'duration': 500},
-#         )
-        
-        
-
-#         dcc.Graph(
-#             figure=dict(
-#                 data=[
-#                     dict(
-#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-#                         y=[219, 146, 112, 127, 124, 180, 236, 207, 236, 263,
-#                            350, 430, 474, 526, 488, 537, 500, 439],
-#                         name='Rest of world',
-#                         marker=dict(
-#                             color='rgb(55, 83, 109)'
-#                         )
-#                     ),
-#                     dict(
-#                         x=[1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#                            2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012],
-#                         y=[16, 13, 10, 11, 28, 37, 43, 55, 56, 88, 105, 156, 270,
-#                            299, 340, 403, 549, 499],
-#                         name='China',
-#                         marker=dict(
-#                             color='rgb(26, 118, 255)'
-#                         )
-#                     )
-#                 ],
-#                 layout=dict(
-#                     title='US Export of Plastic Scrap',
-#                     showlegend=True,
-#                     legend=dict(
-#                         x=0,
-#                         y=1.0
-#                     ),
-#                     margin=dict(l=40, r=0, t=40, b=30)
-#                 )
-#             )
-#             )
-#         }
-
-
 
 
 
@@ -366,341 +328,3 @@ if __name__ == '__main__':
 
 # auto refresh 
 ######################################
-
-
-
-
-
-
-
-#@app.callback(
-#    [Output(component_id='graph1', component_property='figure')],
-#    [Input (component_id='user_id_text_box', component_property='value')])
-
-#@app.callback(
-#    Output('barplot-topactivity', 'figure'),
-#    [Input('activity', 'value'),
-#    Input('slider_updatetime', 'value')])
-#def update_graph(activity, slider_updatetime):
-
-
-#@app.callback(
-#     Output('graph1', 'figure'),
-#     [Input('user_id_text_box', 'value')
-#     ]
-# )
-
-# def update_graph(user_id_text_box):
-#     (results) = get_values_by_userid(conn,cursor,userid)
-#     print(results)
-#     cursor = connection.cursor()
-#     table_name = activity + 'event_table'
-#     start_time = getSliderTime(slider_updatetime)
-#     y_label = "label"
-#     if activity == 'aggregate':
-#         y_label = "aggregate score"
-#         cursor.execute("select repo_name, sum(score)  from {} where create_date >= \'{}\' group by repo_name ORDER BY sum(score) desc LIMIT 20".format(table_name, start_time))
-#     else:
-#         y_label = "no. of " + activity.lower() + " events"
-#         y_label = "no. of " + activity.lower() + " events"
-#         cursor.execute("select repo_name, sum(count)  from {} where create_date >= \'{}\' group by repo_name ORDER BY sum(count) desc LIMIT 20".format(table_name, start_time))
-#     data = cursor.fetchall()
-#     repo_list = []
-#     count_list = []
-#     for i in range(len(data)):
-#         repo_list.append(data[i][0])
-#         count_list.append(data[i][1])
-#     return {
-#         'data': [go.Bar(
-#             x=repo_list,
-#             y=count_list,
-#             opacity= 0.5,
-#             marker={'color':'#800080'}
-#         )],
-#         'layout': go.Layout(
-#             yaxis={'title': '{}'.format(y_label)},
-#             legend={'x': 0, 'y': 1},
-#             hovermode='closest',
-#             plot_bgcolor='rgb(240,248,255)'
-#         )
-#     }
-
-
-
-
-#''' This functions converts a dataframe into an HTML table '''
-# def generate_table2(leaderboard_df, max_rows=10):
-#     return html.Table(
-#         # Header
-#         [html.Tr([html.Th(col) for col in leaderboard_df.columns])] +
-
-#         # Body
-#         [html.Tr([
-#             html.Td(html.A(str(int(leaderboard_df.iloc[i][col])), href='https://stackoverflow.com/questions/'+str(int(leaderboard_df.iloc[i][col])))) for col in leaderboard_df.columns
-#         ]) for i in range(min(len(leaderboard_df), max_rows))]
-#     )
-
-
-
-
-
-
-# top_tags = ['java','python','scala','javascript','c','git'] # top 7 tags to be chosen as input
-
-# app.layout = html.Div([
-# 	
-# 	# This div contains the header
-# 	html.Div([ html.H1(children='Spam Stack')
-#                ], className= 'twelve columns', style={'textAlign':'center'}) ,
-
-# 	# This div contains a dropdown to record the user input
-#     html.Div([ dcc.Dropdown( id = 'input-tag',
-#                              options = [{ 'label': val , 'value': val} for val in top_tags],
-#                              value='java')
-
-#     ]),
-
-#     # This div contains a scatter plot which comapres the scores of posts and the table with posts that need most cleaning
-#     html.Div([
-#             html.Div([dcc.Graph(id='g1')],className='ten columns'),
-#             html.Div([html.Div(id='table-container',)] 
-#              , className='two columns'),
-            
-#     ]),
-
-# ])
-
-# @app.callback(
-#     [Output(component_id='g1', component_property='figure'),
-#     Output(component_id='table-container', component_property='children')],
-#     [Input(component_id='input-tag', component_property='value')])
-    
-# def make_query(input_tag):
-#     custom_query_1 = " SELECT  *  from " + input_tag + "_avg_score order by "+ input_tag +"_avg_score.\"_ParentId\"  LIMIT 1000; "
-#     df1 = load_data(custom_query_1)
-#     custom_query_2 = " SELECT * from " + input_tag + "_avg_new LIMIT 1000;"
-#     df2 = load_data(custom_query_2)
-#     custom_query_3 = " SELECT "+ input_tag +"_improv.\"_ParentId\" as \"Posts\" from " + input_tag + "_improv LIMIT 7;"
-#     df3 = load_data(custom_query_3)
-#     data_table = generate_table(df3)
-#     return [{'data': [{'x': df1['_ParentId'], 'y': df1['_avgscore'],'mode':'markers', 'name':'Before'},
-#                       {'x': df2['_ParentId'], 'y': df2['_avgscore'],'mode':'markers','opacity':0.7,'name':'After'}],
-#          	'layout': {'xaxis': {'title': 'Post Id'}, 'yaxis': {'title': 'Score'}}},
-#          	data_table]
- 
-# colors = {
-#     'background': '#111111',
-#     'text': '#7FDBFF'
-# }
-
-# app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
-#     html.H1(
-#         children='Hello Dash',
-#         style={
-#             'textAlign': 'center',
-#             'color': colors['text']
-#         }
-#     ),
-
-#     html.Div(children='Dash: A web application framework for Python.', style={
-#         'textAlign': 'center',
-#         'color': colors['text']
-#     }),
-
-#     dcc.Graph(
-#         id='example-graph-2',
-#         figure={
-#             'data': [
-#                 {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-#                 {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
-#             ],
-#             'layout': {
-#                 'plot_bgcolor': colors['background'],
-#                 'paper_bgcolor': colors['background'],
-#                 'font': {
-#                     'color': colors['text']
-#                 }
-#             }
-#         }
-#     )
-# ])
-
-
-#if __name__ == '__main__':
-#    app.run_server(debug=True,host="0.0.0.0",port=80)
-
-    
-    
-#FROM checkpoints \
-#     ORDER BY userid,total_dist DESC"""
-# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY userid DESC""" 
-
-# # no
-# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY userid,total_dist DESC""" 
-
-# # no
-# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist,userid DESC""" 
-
-# # does not work 
-# sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY userid DESC
-#     ORDER BY total_dist DESC""" 
-
-
-# sql_statement = """SELECT DISTINCT ON (total_dist) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist DESC""" 
-
-# sql_statement = """SELECT DISTINCT ON (total_dist) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist,userid ASC""" 
-
-
-
-# # 1
-# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist,userid ASC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-# # 2
-# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist,userid DESC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-# # 3
-# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY userid,total_dist ASC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-# # 4
-# sql_statement = """SELECT DISTINCT ON (total_dist,userid) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY userid,total_dist DESC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-
-# sql_statement = """SELECT DISTINCT ON (userid,total_dist) userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist,userid ASC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-
-
-
-
-# sql_statement = """SELECT userid, dt_last, total_dist \
-#     FROM checkpoints \
-#     ORDER BY total_dist DESC""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-
-
-# SELECT 
-# first(COL1) over (partition by user_id order by COL2 rows unbounded following) 
-# FROM table;
-
-
-# sql_statement = """SELECT last(userid) |
-#     OVER (PARTITION BY userid ORDER BY total_dist) \
-#     FROM checkpoints""" 
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-
-
-# sql_statement = """SELECT last(userid, dt_last, total_dist)
-#     OVER (PARTITION BY userid ORDER BY total_dist) \
-#     FROM checkpoints \
-#     ORDER BY total_dist DESC""" 
-
-
-
-# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, segment_dist, total_dist FROM checkpoints ORDER BY userid"""
-# checkpoints_df = pd.read_sql(sql_statement,conn)
-# checkpoints_df.head(20)
-# checkpoints_df.tail(20)
-
-
-
-
-# sql_statement = """SELECT userid, dt_last, total_dist FROM checkpoints"""
-# cursor.execute(sql_statement)
-# results = cursor.fetchall()
-# print(results)
-
-
-# userid = 1
-
-
-# sql_statement = """SELECT userid, dt_last, total_dist 
-#     FROM checkpoints 
-#     WHERE userid = 1
-#     ORDER BY dt_last DESC
-#     LIMIT 1"""
-
-
-
-
-    
-# cursor.execute(sql_statement)
-# results = cursor.fetchall()
-# print(results)
-
-
-
-
-
-# #cursor.execute(sql_statement)
-# #results = cursor.fetchall()
-# #print(leaderboard_df.head())
-# return leaderboard_df
-
-
-# (leaderboard_df) = get_current_leaderboard(conn,cursor)
-# leaderboard_df.head(20)
-
-
-# (conn,cursor) = open_connection_to_db()
-
-# userid = 1
-# (most_recent_results_single_id) = get_most_recent_values_by_single_userid(conn,cursor,userid)
-# print(most_recent_results_single_id)
-
-# (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,userid)
-# print(user_checkpoint_df)
-# user_checkpoint_df.head()
-
-
-# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
-# sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist 
-#sql_statement = """SELECT userid, dt_last, total_dist 
-#                           FROM leaderboard 
-#                           ORDER BY total_dist DESC
-#                           LIMIT 10"""
-#sql_statement = """SELECT userid, dt_last, total_dist 
-#                           FROM leaderboard 
-#                           ORDER BY total_dist DESC
-#                           LIMIT 10"""
-#sql_statement = """SELECT DISTINCT ON (userid) userid, dt_last, total_dist \
-# 
-
-
-
-
-
-    
