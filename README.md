@@ -89,11 +89,16 @@ which will insert processed data into the `checkpoints` table on the postgres se
 
 ## Web App Instructions 
 
-Forthcoming 
-
-
-
-
+Edit the last line in `dash/dash_app.py` to server the app over local or ec2 pg instance and launch the web app with 
+```
+python dash/dash_app.py 
+```
+and browse to 
+```
+http://127.0.0.1:8050/
+or
+http://ec2-34-222-54-126.us-west-2.compute.amazonaws.com:8050/
+```
 
 
 

@@ -25,12 +25,18 @@ manual_debug = False
 #else:
 #    work_dir = os.getcwd()
 
+
+
 #def preprocess_inputs(input_file, output_file):
 def preprocess_inputs(n_files):
     
     print('file read begin ')
 
-
+    # old
+    # bad_ids = [3899, 103104, 144629, 144670, 160180, 166752, 168262]             
+    # new 
+    bad_ids = [3899, 22945, 41488, 66455, 103104, 129401, 140513, 144629, 144670, 160180, 166752, 168262]             
+ 
     n_records_per_activity = 500
     #n_activities_per_file = 168000
     # 83892000
@@ -97,7 +103,8 @@ def preprocess_inputs(n_files):
             with open(input_file) as file_open:
                 for line in file_open:
                     id_temp = id_start + line_count+1
-                    if not (id_temp == 3899):                    
+                    #if not (id_temp == 3899):                    
+                    if not (id_temp in bad_ids):
                         #if (line_count%100 == 0):
                         #    print ('      line_count %6.0f start_count %6.0f end_count %6.0f ' %(line_count, start_count, end_count))
                         #    #print ('     line_count %6.0f with %3.0f n_records_per_activity and offsets dt %3.0f, lon %5.2f, lat %5.2f ' %(line_count, n_records_per_activity, dt_offset_temp, lon_offset_temp, lat_offset_temp))
