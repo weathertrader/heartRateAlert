@@ -18,6 +18,8 @@ Spin up 5 EC2 t2.medium instances.  Install Spark on 6 of them, with one master 
 On the 7th install postgres and dash and ensure communication between Spark and postgres.
 Detailed setup directions can be found in the `setup/README.md` [Link](https://github.com/weathertrader/raceCast/tree/master/setup)
 
+Inline-style: 
+![alt text](images/racecast_tech_stack.png "hover text")
 
 ## Data Preprocessing 
 
@@ -78,7 +80,7 @@ export db_host=ec2-34-216-105-134.us-west-2.compute.amazonaws.com
 
 ## Spark Batch Run Instructions 
 
-Ssh into the Spark master, spin up the cluster and ensure all workers are set up and have access to S3 etc and process the gps data using the following
+ssh into the Spark master, spin up the cluster and ensure all workers are set up and have access to S3 etc and process the gps data using the following
 
 ```
 src/run_batch_process_gps.sh
