@@ -96,23 +96,7 @@ def get_current_leaderboard(conn,cursor):
     #leaderboard_df.head(50)
     return leaderboard_df
 
-def generate_table(leaderboard_df, max_rows=20):
-    return html.Table([
-        html.Thead(
-            html.Tr([html.Th(col) for col in leaderboard_df.columns])
-        ),
-        html.Tbody([
-            html.Tr([
-                html.Td(leaderboard_df.iloc[i][col]) for col in leaderboard_df.columns
-            ]) for i in range(min(len(leaderboard_df), max_rows))
-        ])
-    ])
-
-
-
 (conn,cursor) = open_connection_to_db()
-
-
 (leaderboard_df) = get_current_leaderboard(conn,cursor)
 #leaderboard_df.columns = ['userid', 'last reported time', 'distance_traveled']
 leaderboard_df.columns = ['userid', 'last report [min]', 'last segment distance [km]', 'total distance [km]']
@@ -130,10 +114,8 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
     html.Div([        
         html.Div([
             html.Div(html.H2('Live Race Leaderboard'), style={'textAlign': 'center','color': colors['text']}),
-            #html.Div(generate_table(leaderboard_df), style={'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})
-            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'width': '100%', 'display': 'flex', 'justify-content': 'center'}),
-            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'width': '100%', 'display': 'flex', 'justify-content': 'center'}),            
-            html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),            
+            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),
+            html.Div(id='div_table', style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),
             #html.Div(html.H2('Athlete Tracker,  Enter ID'), style={'color': colors['text'],'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),       
             #html.Div(html.H2(id='div_display-userid', style={'textAlign': 'center','color': colors['text']})),
             
@@ -154,6 +136,28 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
     ], className="row")
 ])
 
+
+@app.callback(
+    dash.dependencies.Output('div_table', 'children'),
+    [dash.dependencies.Input('submit-val', 'n_clicks')],
+    [dash.dependencies.State('div_user_id_text_box', 'value')])
+def generate_table(n_clicks,input_value):
+    (leaderboard_df) = get_current_leaderboard(conn, cursor)        
+    #leaderboard_df
+    max_rows=20
+    return html.Table([
+        html.Thead(
+            html.Tr([html.Th(col) for col in leaderboard_df.columns])
+        ),
+        html.Tbody([
+            html.Tr([
+                html.Td(leaderboard_df.iloc[i][col]) for col in leaderboard_df.columns
+            ]) for i in range(min(len(leaderboard_df), max_rows))
+        ])
+    ])
+
+
+
 @app.callback(
     dash.dependencies.Output('div_display-userid', 'children'),
     [dash.dependencies.Input('submit-val', 'n_clicks')],
@@ -166,10 +170,6 @@ def update_output_div(n_clicks,input_value):
     #return 'User selected is {}'.format(input_value)
     return text
 
-#@app.callback(
-#    Output(component_id='div_figure1',component_property='children'),
-#    [Input(component_id='div_user_id_text_box',component_property='value')]    
-#)
 @app.callback(
     dash.dependencies.Output('div_figure1', 'children'),
     [dash.dependencies.Input('submit-val', 'n_clicks')],
