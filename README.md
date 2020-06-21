@@ -1,7 +1,7 @@
 
 # RaceCast 
 
-Live broadcasts of athletes positions during races from gps streaming data using Spark mini-batch processing, Postgres and Dash
+Live broadcasts of athletes positions during races from gps streaming data using Spark mini-batch processing, Postgres and Dash.
 
 ## Table of Contents
 
@@ -17,7 +17,6 @@ Live broadcasts of athletes positions during races from gps streaming data using
 1. [Set up database tables](README.md#set-up-database-tables)
 1. [Spark Batch Run Instructions](README.md#Spark-Batch-Run-Instructions)
 1. [Web App Instructions](README.md#Web-App-Instructions)
-1. [To do](README.md#To-do)
 
 ## Motivation
 
@@ -167,23 +166,3 @@ http://127.0.0.1:8050/
 or
 http://ec2-34-222-54-126.us-west-2.compute.amazonaws.com:8050/
 ```
-
-
-
-
-
-
-
-Inline-style: 
-![alt text](example.png "hover text")
-
-
-## To Do
-
-Clone the repo and enter the directory.  
-
-```git clone git@github.com:weathertrader/raceCast.git
-
-cd raceCast
-```
-
