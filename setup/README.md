@@ -15,7 +15,7 @@ Inline-style:
 
 ## Postgres Setup
 
-Spin up an EC2 instance.  I chose a t2.medium.  Set u a keypair from local to the pg server, and from the Spark master to the pg instance.
+Spin up an EC2 instance.  I chose a t2.medium.  Set up a keypair from local to the pg server, and from the Spark master to the pg instance.
 Check that you can ssh from master to pg, and from local to pg.  ssh into pg and install postgres, dash and the python ORM to postgres
 
 ```
@@ -170,14 +170,14 @@ export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
 export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
 
 on master 
+export PATH=/usr/local/spark/bin:$PATH
+export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
+export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
 
 on local
 export PATH=/home/craigmatthewsmith/spark-2.4.5-bin-hadoop2.7/bin:$PATH
-export PATH=/usr/local/spark/bin:$PATH
 export PYSPARK_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
 export PYSPARK_DRIVER_PYTHON=/home/craigmatthewsmith/anaconda3/envs/pyspark_env/bin/python3
-export PYSPARK_PYTHON=/home/ubuntu/miniconda3/bin/python3
-export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/bin/python3
 source  ~/.bashrc
 ```
 

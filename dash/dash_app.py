@@ -309,8 +309,8 @@ def update_graph2(n_clicks, div_user_id_text_box):
     )
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
-    #app.run_server(debug=True, port=8050, host='ec2-34-222-54-126.us-west-2.compute.amazonaws.com')
+    #app.run_server(debug=True)
+    app.run_server(debug=True, port=8050, host='ec2-34-222-54-126.us-west-2.compute.amazonaws.com')
 
 
 
