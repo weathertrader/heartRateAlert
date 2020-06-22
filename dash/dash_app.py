@@ -42,20 +42,10 @@ def open_connection_to_db():
     return conn, cursor
 
 def get_most_recent_values_by_single_userid(conn,cursor,userid):
-    #sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (userid)
     sql_statement = """SELECT userid, dt_last, total_dist \
         FROM checkpoints WHERE userid = '%s' \
         ORDER BY dt_last DESC \
         LIMIT 1""" % (int(userid))
-    # n = 33753
-    # sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist FROM leaderboard WHERE userid = '%s'""" % (n)
-    # cursor.execute(sql_statement)
-    # results = cursor.fetchall()
-    # print(results)
-    #sql_statement = """SELECT userid, dt_last, lon_last, lat_last, total_dist 
-    #                           FROM leaderboard 
-    #                           ORDER BY total_dist DESC
-    #                           LIMIT 10"""
     cursor.execute(sql_statement)
     user_most_recent_checkpoint = cursor.fetchall()[0]
     #print(leaders_df.head())
@@ -65,9 +55,6 @@ def get_checkpoints_by_single_userid(conn,cursor,userid):
     sql_statement = """SELECT userid, dt_last, segment_dist, total_dist FROM checkpoints WHERE userid = '%s'""" % (int(userid))
     user_checkpoint_df = pd.read_sql(sql_statement,conn)
     #print(user_checkpoint_df.head())
-    #user_last_checkpoint = user_checkpoint_df.iloc[0]['userid']
-    #if (batch_df['id'][n] == 1):
-    #    print('    found checkpoint user %s dt %5.1f lon %5.1f lat %5.1f  segment_dist %5.1f ' %(user_checkpoint_df.iloc[-1]['userid'], user_checkpoint_df.iloc[-1]['dt_last'], user_checkpoint_df.iloc[-1]['lon_last'], user_checkpoint_df.iloc[-1]['lat_last'], user_checkpoint_df.iloc[-1]['segment_dist']))
     return user_checkpoint_df
 
 def get_current_leaderboard(conn,cursor):
@@ -81,14 +68,8 @@ def get_current_leaderboard(conn,cursor):
     print('leaderboard_df before dropping')
     print(leaderboard_df.head(20))
     leaderboard_df.drop_duplicates(subset='userid', keep='first', inplace=True)
-    #print('leaderboard_df after dropping1')
-    #print(leaderboard_df.head(20))
     leaderboard_df.reset_index(drop=True, inplace=True)
-    #print('leaderboard_df after dropping1')
-    #print(leaderboard_df.head(20))
     leaderboard_df = leaderboard_df.head(10)    
-    #leaderboard_df.drop('segment_dist', axis=1, inplace=True)
-    #leaderboard_df['userid'] = leaderboard_df['userid'].map("{:,.0f}".format)
     leaderboard_df['userid']  = leaderboard_df['userid'].map("{:.0f}".format)
     leaderboard_df['dt_last'] = leaderboard_df['dt_last'].map("{:.1f}".format)
     leaderboard_df['segment_dist'] = leaderboard_df['segment_dist'].map("{:.2f}".format)
@@ -98,38 +79,25 @@ def get_current_leaderboard(conn,cursor):
 
 (conn,cursor) = open_connection_to_db()
 (leaderboard_df) = get_current_leaderboard(conn,cursor)
-#leaderboard_df.columns = ['userid', 'last reported time', 'distance_traveled']
 leaderboard_df.columns = ['userid', 'last report [min]', 'last segment distance [km]', 'total distance [km]']
-#print(leaderboard_df.head(10))
 userid = leaderboard_df['userid'][0]
 (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,userid)
 #print(user_checkpoint_df.head(20))
-
-
-#(user_most_recent_checkpoint) = get_most_recent_values_by_single_userid(conn,cursor,userid)
-#print(user_most_recent_checkpoint)
 
 app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
     html.Div(html.H1('RaceCast'), style={'textAlign': 'center','color': colors['text']}),
     html.Div([        
         html.Div([
             html.Div(html.H2('Live Race Leaderboard'), style={'textAlign': 'center','color': colors['text']}),
-            #html.Div(generate_table(leaderboard_df), style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),
             html.Div(id='div_table', style={'backgroundColor': 'white', 'color': 'black', 'margin-left': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'right', 'justify-content': 'center'}),
-            #html.Div(html.H2('Athlete Tracker,  Enter ID'), style={'color': colors['text'],'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),       
-            #html.Div(html.H2(id='div_display-userid', style={'textAlign': 'center','color': colors['text']})),
-            
             html.Div([
-                #dcc.Input(id='div_user_id_text_box', value='41',type='text', style={'color': 'black', 'margin-left': '20px', 'margin-right': '20px'}), 
                 dcc.Input(id='div_user_id_text_box', value=userid, type='text', style={'color': 'black', 'margin-left': '20px', 'margin-right': '20px'}), 
                 html.Button('Submit', id='submit-val', n_clicks=0, style={'color': colors['text']})
             ], style={'color': colors['text'],'margin-top': '50px','margin-bottom': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}, className="row"),
         ], className="six columns"),
         html.Div([
             html.Div(html.H2('Leaderboard Checkpoints'), style={'textAlign': 'center','color': colors['text']}),
-            #html.Div(html.H2('Leaderboard Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
             html.Div(id='div_figure1', style={'margin-top': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),       
-            #html.Div(html.H2('User Progress vs Time'), style={'margin-top': '10px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
             html.Div(html.H2(id='div_display-userid', style={'color': colors['text'],'margin-top': '20px', 'width': '100%', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})),
             html.Div(id='div_figure2', style={'margin-top': '20px','margin-bottom': '20px', 'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),       
         ], className="six columns"),
@@ -156,18 +124,14 @@ def generate_table(n_clicks,input_value):
         ])
     ])
 
-
-
 @app.callback(
     dash.dependencies.Output('div_display-userid', 'children'),
     [dash.dependencies.Input('submit-val', 'n_clicks')],
     [dash.dependencies.State('div_user_id_text_box', 'value')])
 def update_output_div(n_clicks,input_value):
     (results) = get_most_recent_values_by_single_userid(conn,cursor,input_value)
-    #print(results)
     text = 'User '+str(results[0])+ ' total distance '+str("{:.1f}".format(results[2]))+ ' km as of '+str("{:.1f}".format(results[1]))+' min'
     #print(text)
-    #return 'User selected is {}'.format(input_value)
     return text
 
 @app.callback(
@@ -178,12 +142,10 @@ def update_graph1(n_clicks, div_user_id_text_box):
     (leaderboard_df) = get_current_leaderboard(conn, cursor)
     #print(leaderboard_df.head(20))    
     leaders_ids = leaderboard_df['userid']
-    #print(leaders_ids)
     n_leaders = len(leaders_ids)
-    #print ('found %s leaders' %(n_leaders))
+    print ('found %s leaders' %(n_leaders))
     x_max = 0.0
     y_max = 0.0
-    #for n in range(0, n_leaders, 1):
     for n in range(0, 5, 1):
         #print ('  processing leader %s with id %s ' %(n, leaders_ids[n]))
         (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,leaders_ids[n])
@@ -203,7 +165,6 @@ def update_graph1(n_clicks, div_user_id_text_box):
             df_temp4 = user_checkpoint_df
         #print ('  done processing  ')
 
-    # dash='dash', dash='dot'
     x_max = x_max+1
     y_max = y_max+1
     return dcc.Graph(
@@ -272,7 +233,6 @@ def update_graph2(n_clicks, div_user_id_text_box):
     (user_checkpoint_df) = get_checkpoints_by_single_userid(conn,cursor,div_user_id_text_box)
     x_max = np.nanmax(user_checkpoint_df['dt_last'])+1
     y_max = np.nanmax(user_checkpoint_df['total_dist'])+1
-    #print(user_checkpoint_df.head())
     return dcc.Graph(
         figure=dict(
             data=[

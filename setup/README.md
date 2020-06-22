@@ -1,17 +1,12 @@
 
 # RaceCast Infra Setup
 
-Inline-style: 
 ![alt text](../images/racecast_tech_stack.png "hover text")
-
 
 ## Table of Contents
 1. [Postgres Setup](README.md#Postgres-Setup)
 1. [Spark Cluster Setup](README.md#spark-cluster-setup)
 1. [Connect Spark to Postgres](README.md#Connect-Spark-to-Postgres)
-1. [General ssh and scp commands](README.md#General-ssh-and-scp-commands)
-1. [Dash setup](README.md#Dash-setup)
-1. [Miscellaneous](README.md#Miscellaneous)
 
 ## Postgres Setup
 
