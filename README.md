@@ -5,11 +5,10 @@ Live broadcasts of athletes positions during races from gps streaming data using
 
 ## Table of Contents
 
-1. [Motivation](README.md#motivation)
-1. [Dataset](README.md#dataset)
-1. [Approach and Requirements](README.md#approach-and-requirements)
-1. [Architecture](README.md#architecture)
+1. [Motivation and Requirements](README.md#motivation-and-requirements)
 1. [RaceCast Website](README.md#racecast-website)
+1. [Dataset](README.md#dataset)
+1. [Architecture](README.md#architecture)
 1. [Scaling](README.md#scaling)
 1. [Setup](README.md#setup)
 1. [Data Preprocessing](README.md#Data-preprocessing)
@@ -18,10 +17,21 @@ Live broadcasts of athletes positions during races from gps streaming data using
 1. [Spark Batch Run Instructions](README.md#Spark-Batch-Run-Instructions)
 1. [Web App Instructions](README.md#Web-App-Instructions)
 
-## Motivation
+## Motivation and Requirements
 
 During an athletic race, spectators would like to know who is the lead and by how much, and 
 they would also like to be able get the position of their favorite runner in realtime.
+The end goal was a leaderboard which updates at least every minute that is 
+capable of processing up to 100K participants.
+During the course of this project I specifically sought to test the limitations of a Spark min-batching approach.
+
+![alt text](images/racecast_website.png "hover text")
+
+## RaceCast Website 
+
+The leaderboard website I built has a race leaderboard table, and figure showing the progress of all of the leaders,
+a text box where the end-user can search for their runner, a text box which shows the details of their runner in 
+terms of last reported location and distance traveled, and a figure showing progress of their specific runner.
 
 ![alt text](images/racecast_website.png "hover text")
 
@@ -39,26 +49,12 @@ record, time_elapsed, userid, lon, lat, heart_rate
 3919,1,876,0.00164,0.0043,123
 ```
 
-## Approach and Requirements 
-
-The end goal was a leaderboard which updates at least every minute that is 
-capable of processing up to 100K participants.
-During the course of this project I specifically sought to test the limitations of a Spark min-batching approach.
-
 ## Architecture 
 
-For this project I used S3, Apache Spark, Airflow, Postgres and Dashly, all hosted on AWS EC2 instances.  
+For this project I used S3, Apache Spark, Airflow, Postgres and Plotly Dash, all hosted on AWS EC2 instances.  
 For further information on the setup please see the `setup/README.md`.
 
 ![alt text](images/racecast_tech_stack.png "hover text")
-
-## RaceCast Website 
-
-The leaderboard website I built has a race leaderboard table, and figure showing the progress of all of the leaders,
-a text box where the end-user can search for their runner, a text box which shows the details of their runner in 
-terms of last reported location and distance traveled, and a figure showing progress of their specific runner.
-
-![alt text](images/racecast_website.png "hover text")
 
 ## Scaling
 
@@ -70,6 +66,7 @@ I found very good scaling at low number of workers, and a performance degradatio
 Next I tested throughput of total number of records per second according to the number of athletes that participated in the event.
 At very large number of participants it is likely that throughput performance will be begin to asymptote, but the 
 system that I designed was quite a ways away from that mark.
+
 ![alt text](images/spark_throughput_vs_athlete.png "hover text")
 
 One of the key steps I did to make my Spark jobs faster was to define rather than infer Schema.  
