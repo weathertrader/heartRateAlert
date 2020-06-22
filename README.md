@@ -25,8 +25,6 @@ The end goal was a leaderboard which updates at least every minute that is
 capable of processing up to 100K participants.
 During the course of this project I specifically sought to test the limitations of a Spark min-batching approach.
 
-![alt text](images/racecast_website.png "hover text")
-
 ## RaceCast Website 
 
 The leaderboard website I built has a race leaderboard table, and figure showing the progress of all of the leaders,
