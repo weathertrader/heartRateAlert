@@ -121,18 +121,18 @@ If this does not work you'll want to doublecheck your AWS security group Inbound
 
 On the master and on all workers, install the following 
 
-
+```
 sudo apt-get update && sudo apt upgrade
 sudo apt-get install openjdk-8-jre-headless
 sudo apt-get install scala
-v 2.11.12
-scala -version
+scala -version # should return 2.11.12 or above
 wget https://downloads.apache.org/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
 
 tar -xvf spark-2.4.5-bin-hadoop2.7.tgz
 sudo mv spark-2.4.5-bin-hadoop2.7/ /usr/local/spark
+```
 
-Now install a python environment which contains pyspake
+Now install a python environment which contains pyspark
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod 775 that file and execute it then
