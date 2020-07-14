@@ -3,6 +3,8 @@
 
 Live broadcasts of athletes positions during races from gps streaming data using Spark mini-batch processing, Postgres and Dash.
 
+![alt text](images/racecast_intro.png "hover text")
+
 ## Table of Contents
 
 1. [Motivation and Requirements](README.md#motivation-and-requirements)
